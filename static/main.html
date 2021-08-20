@@ -811,16 +811,39 @@
                             this.$Message.success('Please wait for Data!');
                             this.customStatus="customRunning";
                             console.log(this.customData)
-                            window.setTimeout(()=>{
+
+                            var formData = new FormData();
+                            var toUploadFiles = [this.customDEMFile, this.customLakeZip]
+                            formData.append('fileDEM', this.customDEMFile)
+                            formData.append('fileLake', this.customLakeZip)
+                            formData.append('threshold', this.customDataSetting.riverThreshold)
+                            axios({
+                                url: "/runCustomData",
+                                method: "post",
+                                data: formData
+                            })
+                            .then(res=>{
+                                console.log(res.data)
                                 this.customStatus = "custom4Download";
-                                this.customDataUrl="XXX";
-                            }, 3000);
+                                this.customDataUrl=res.data;
+                            })
+                            .catch(err=>{
+                                confirm('Run Custom Data Error!');
+                                this.customStatus = "custom4Download";
+                                this.customDataUrl="";
+                            });
+                            
+                            // window.setTimeout(()=>{
+                            //     this.customStatus = "custom4Download";
+                            //     this.customDataUrl="XXX";
+                            // }, 3000);
                         } else {
                             confirm('Value Can not be Empty.');
                     }});
                 },
                 downloadCustomData(){
                     confirm('Download Custom Data. Url: ' + this.customDataUrl);
+                    window.open(this.customDataUrl);
                 },
                 addGeoJSONToMap(GeoJSONStr, color){
                     this.drawingLayerGroup.clearLayers();
@@ -869,7 +892,7 @@
                                 }
                                 case "whole":{
                                     //临时写法
-                                    baseUrl = "http://localhost:5000/basins/queryScope"
+                                    baseUrl = "/basins/queryScope"
                                 }
                             }
                             axios
