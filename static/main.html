@@ -60,6 +60,10 @@
         .queryTypeDiv{
             padding: 0px 0px 0px 15px;
         }
+        .uploadCSV{
+            border: dashed 0.5px;
+            margin-left: 5px;
+        }
         .uploadGeoJSON{
             border: dashed 0.5px;
             margin-left: 5px;
@@ -77,6 +81,10 @@
         .showGeoJSONInfoDiv{
             margin-bottom: 5px;
         }
+        .csvInfo{
+            margin-left: 15px;
+            width: 250px;
+        }
         .geoJSONInfo{
             margin-left: 15px;
             width: 250px;
@@ -85,7 +93,13 @@
             background-color: #ed4014;
             color: white;
         }
-        .removeGeoJSONSelect{
+        .removeCSVSelect{
+            margin-left: 5px;
+        }
+        #removeCSVSelect{
+            margin-left: 5px;
+        }
+        #removeGeoJSONSelect{
             margin-left: 5px;
         }
         .selectDataDiv{
@@ -102,6 +116,9 @@
         }
         .resetOperationBtn{
             width:350px;
+        }
+        .downloadBasinsBtnDiv{
+            text-align: center;
         }
         .customOperationBtn{
             width:350px;
@@ -145,6 +162,13 @@
                 </Card>
                 <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Data Service Tools</strong>
+                    <div>
+                        <span>Batch Query Basin Scopes:</span>
+                        <i-button size="small" type="primary" ghost class="uploadCSV" @click="showUploadCSVModal">
+                            <Icon type="ios-cloud-upload" size="15"></Icon>
+                            <Icon type="ios-cloud-download" size="15"></Icon>
+                        </i-button>
+                    </div>
                     <span>Query Basin Scope by Click:</span>
                     <i-switch class="clickSwitch" size="large" @on-change="changeQueryBasinBtn" v-model="querySwitch">
                         <Icon slot="open" type="md-pin" size="20"></Icon>
@@ -219,6 +243,43 @@
                 </Card>
             </vue-scroll>
         </div>
+        <Modal v-model="uploadCSVModal" title="Upload CSV to Batch Query Basin Scopes" width="600" draggable>
+            <div v-if="batchStatus=='csvUpload'">
+                <div class="showGeoJSONInfoDiv">
+                    <span>Selected File:</span>
+                    <i-input v-model="csvName" readonly class="csvInfo" size="small"></i-input>
+                    <i-button v-if="csvName!=''" size="small" 
+                    class="fileBtnHoverRed" id="removeCSVSelect"
+                    @click="cancelCSVSelect">
+                        <Icon type="md-close" size="20"></Icon>
+                    </i-button>
+                </div>
+                <Upload :max-size="1024*1024" type="drag" :before-upload="gatherCSVFile" action="-">
+                    <div style="padding: 20px 0">
+                        <Icon type="ios-cloud-upload" size="50" style="color: #3399ff"></Icon>
+                        <p>
+                            Click or Drag CSV File here to Upload.
+                        </p>
+                    </div>
+                </Upload>
+            </div>
+            <div v-else-if="batchStatus=='basinRunning'">
+                <i-progress :percent="99.99" status="active" hide-info></i-progress>
+                <span>Running...</span>
+            </div>
+            <div v-else-if="batchStatus=='basinDownload' && basinRangesUrl!=''" class="downloadBasinsBtnDiv">
+                <i-button size="small" class="customOperationBtn" type="success" ghost @click="downloadMultiBasins()">
+                    <p>Download</p>
+                </i-button>
+            </div>
+            <div slot="footer" v-if="batchStatus=='csvUpload'">
+                <i-button @click="uploadCSVModal=false">Cancel</i-button>
+                <i-button type="success" @click="uploadCSV()">Upload</i-button>
+            </div>
+            <div slot="footer" v-else>
+                <i-button size="small" @click="uploadCSVModal=false">Close</i-button>
+            </div>
+        </Modal>
         <Modal v-model="uploadGeoJSONModal" title="Upload GeoJSON" width="600" draggable>
             <div class="showGeoJSONInfoDiv">
                 <span>Selected File:</span>
@@ -422,6 +483,11 @@
                     wholeBasinLayer: null,
                     wholeBasinCkb:false,
                     wholeUpstreamCkb:false,
+                    uploadCSVModal:false,
+                    toUploadCSV: null,
+                    csvName: "",
+                    batchStatus:"csvUpload",
+                    basinRangesUrl:"",
                     uploadGeoJSONModal:false,
                     toUploadGeoJSON: null,
                     geoJSONName:"",
@@ -671,6 +737,50 @@
                 changeQueryBasinsLevel(){
                     console.log("Query Standard Basins in level " + this.levelSelectQuery + ".");
                 },
+                showUploadCSVModal(){
+                    this.toUploadCSV = null;
+                    this.csvName = "";
+                    this.uploadCSVModal = true;
+                },
+                cancelCSVSelect(){
+                    this.toUploadCSV = null;
+                    this.csvName = "";
+                },
+                gatherCSVFile(file){
+                    this.toUploadCSV = file;
+                    this.csvName = file.name;
+                },
+                uploadCSV(){
+                    if(this.toUploadCSV != null){
+                        this.$Message.success('Please wait for Data!');
+                        this.batchStatus="basinRunning";
+
+                        var formData = new FormData();
+                        formData.append('pointsCSV', this.toUploadCSV)
+                        axios({
+                            url: "/basins/queryMultiScope",
+                            method: "post",
+                            data: formData
+                        })
+                        .then(res=>{
+                            console.log(res.data)
+                            this.batchStatus = "basinDownload";
+                            this.basinRangesUrl=res.data;
+                        })
+                        .catch(err=>{
+                            confirm('Run Custom Data Error!');
+                            this.batchStatus = "basinDownload";
+                            this.basinRangesUrl="";
+                        });
+                    }
+                    else{
+                        confirm("No File has be Added.");
+                    }
+                },
+                downloadMultiBasins(){
+                    confirm('Download Custom Data. Url: ' + this.basinRangesUrl);
+                    window.open(this.basinRangesUrl);
+                },
                 showUploadGeoJSONModal(){
                     this.toUploadGeoJSON = null;
                     this.geoJSONName = "";
@@ -813,7 +923,6 @@
                             console.log(this.customData)
 
                             var formData = new FormData();
-                            var toUploadFiles = [this.customDEMFile, this.customLakeZip]
                             formData.append('fileDEM', this.customDEMFile)
                             formData.append('fileLake', this.customLakeZip)
                             formData.append('threshold', this.customDataSetting.riverThreshold)

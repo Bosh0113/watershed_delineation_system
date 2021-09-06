@@ -4,6 +4,7 @@ import pymongo
 import os
 import time
 import shutil
+import csv
 
 
 app = Flask(__name__)
@@ -30,6 +31,48 @@ def queryScope():
         return geoJson
     else:
         return '0'
+
+
+@app.route('/basins/queryMultiScope', methods=['POST'])
+def queryMultiScope():
+    f_csv = request.files['pointsCSV']
+    
+    run_id = str(time.time())
+    comp_folder = os.path.join(os.path.abspath('.'), app.config['UPLOAD_FOLDER'], run_id)
+    os.makedirs(comp_folder)
+
+    f_csv_path = os.path.join(comp_folder,secure_filename(f_csv.filename))
+
+    f_csv.save(f_csv_path)
+    
+    resu_folder = os.path.join(os.path.abspath('.'), app.config['RESULT_FOLDER'], run_id)
+    os.makedirs(resu_folder)
+
+    with open(f_csv_path, 'r') as f:
+        reader = csv.reader(f)        
+        count = 0
+        for row in reader:
+            count = count + 1
+            if count > 1:
+                name = row[0]
+                lat = float(row[1])
+                lon = float(row[2])
+                                
+                clickQuery = {"features.geometry":{"$geoIntersects":{"$geometry":{"type": "Point","coordinates": [lon, lat]}}}}
+                geoJson = mycol.find_one(clickQuery)
+                if geoJson != None:
+                    del geoJson["_id"]
+                    with open(resu_folder + '\\'+name+'.geojson', 'w') as w:
+                        w.write(str(geoJson))
+
+    shutil.make_archive(resu_folder, 'zip', resu_folder)
+
+    shutil.rmtree(comp_folder)
+    shutil.rmtree(resu_folder)
+
+    result_zip = "/" + app.config['RESULT_FOLDER'] + "/" + run_id + '.zip'
+
+    return result_zip
 
 
 @app.route('/runCustomData', methods=['POST'])
