@@ -192,6 +192,11 @@
                             </Radio>
                         </Radio-group>
                     </div>
+                    <div>
+                        <i-button v-if="showDownloadGeoJSONBtn" size="small" type="success" ghost @click="downloadRangeGeoJSON">
+                            <p>Download Basin Boundary to GeoJSON</p>
+                        </i-button>
+                    </div>
                     <Divider size="small" class="divider"></Divider>
                     <span>Download Data by Geometry:</span>
                     <div class="basinTypeDiv">
@@ -502,6 +507,8 @@
                     loadingRiver:false,
                     resetDataModal:false,
                     customDataModal:false,
+                    showDownloadGeoJSONBtn: false,
+                    toDownloadGeoJSONStr: "",
                     querySwitch:false,
                     queryType:"whole",
                     levelSelectQuery:1,
@@ -781,6 +788,21 @@
                     confirm('Download Custom Data. Url: ' + this.basinRangesUrl);
                     window.open(this.basinRangesUrl);
                 },
+                downloadRangeGeoJSON(){
+                    var geojsonStr = this.toDownloadGeoJSONStr;
+                    var geojsonBlob = new Blob([JSON.stringify(geojsonStr, null, 2)], {type: "application/json"})
+                    var reader = new FileReader();
+                    var filename = "basin.geojson";
+                    reader.readAsDataURL(geojsonBlob);
+                    reader.onload = function (e) {
+                        var a = document.createElement("a");
+                        a.download = filename;
+                        a.href = e.target.result;
+                        $("body").append(a);
+                        a.click();
+                        $(a).remove();
+                    };
+                },
                 showUploadGeoJSONModal(){
                     this.toUploadGeoJSON = null;
                     this.geoJSONName = "";
@@ -796,6 +818,7 @@
                 },
                 uploadGeoJSON(){
                     if(this.toUploadGeoJSON != null){
+                        this.showDownloadGeoJSONBtn = false;
                         this.drawingLayerGroup.clearLayers();
                         var reader = new FileReader();
                         reader.readAsText(this.toUploadGeoJSON);
@@ -976,10 +999,12 @@
                 listenDraw(){
                     var _this = this;
                     this.mapEl.on('pm:create', e=>{
+                        _this.showDownloadGeoJSONBtn = false;
                         _this.drawingLayerGroup.clearLayers();
                         _this.drawingLayerGroup.addLayer(e.layer);
                     });
                     this.mapEl.on('pm:remove', e=>{
+                        _this.showDownloadGeoJSONBtn = false;
                         _this.drawingLayerGroup.clearLayers();
                     });
                     this.mapEl.on('click', e=>{
@@ -1009,6 +1034,8 @@
                             .then(res=>{
                                 if(res.data!=0){
                                     var tempGeoJSON = res.data;
+                                    _this.showDownloadGeoJSONBtn = true;
+                                    _this.toDownloadGeoJSONStr = tempGeoJSON;
                                     _this.addGeoJSONToMap(JSON.stringify(tempGeoJSON), "red");
                                 }
                                 else{
