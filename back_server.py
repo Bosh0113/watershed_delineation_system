@@ -10,7 +10,6 @@ import csv
 app = Flask(__name__)
 myclient = pymongo.MongoClient('mongodb://localhost:27017/')
 mydb = myclient["BasinsDataBase"]
-mycol = mydb["wholeBasinScale"]
 app.config['UPLOAD_FOLDER'] = 'static/compute'
 app.config['RESULT_FOLDER'] = 'static/results'
 
@@ -20,8 +19,25 @@ def mainpage():
     return app.send_static_file("main.html")
 
 
-@app.route('/basins/queryScope', methods=['GET'])
-def queryScope():
+# 示例代码可删除
+# @app.route('/basins/queryScope', methods=['GET'])
+# def queryScope():
+#     lon = float(request.args.get('lon'))
+#     lat = float(request.args.get('lat'))
+#     mycol = mydb["wholeBasinScale"]
+#     clickQuery = {"features.geometry":{"$geoIntersects":{"$geometry":{"type": "Point","coordinates": [lon, lat]}}}}
+#     geoJson = mycol.find_one(clickQuery)
+#     if geoJson != None:
+#         del geoJson["_id"]
+#         return geoJson
+#     else:
+#         return '0'
+
+
+# 在对应层级中查询流域范围
+@app.route('/basins/querySubLevel/<lv>', methods=['GET'])
+def querySubLevel(lv):
+    mycol = mydb["Basin_lv" + lv]
     lon = float(request.args.get('lon'))
     lat = float(request.args.get('lat'))
     clickQuery = {"features.geometry":{"$geoIntersects":{"$geometry":{"type": "Point","coordinates": [lon, lat]}}}}
@@ -32,9 +48,10 @@ def queryScope():
     else:
         return '0'
 
-
-@app.route('/basins/queryMultiScope', methods=['POST'])
+# CSV点集批量查询各流域范围
+@app.route('/basins/queryMultiScope/<lv>', methods=['POST'])
 def queryMultiScope():
+    mycol = mydb["Basin_lv" + lv]
     f_csv = request.files['pointsCSV']
     
     run_id = str(time.time())
@@ -75,37 +92,60 @@ def queryMultiScope():
     return result_zip
 
 
-@app.route('/runCustomData', methods=['POST'])
-def runCustomData():
-    f_dem = request.files['fileDEM']
-    f_lake = request.files['fileLake']
-    threshold = request.form.get('threshold')
+# 示例代码可删除
+# @app.route('/runCustomData', methods=['POST'])
+# def runCustomData():
+#     f_dem = request.files['fileDEM']
+#     f_lake = request.files['fileLake']
+#     threshold = request.form.get('threshold')
     
+#     run_id = str(time.time())
+#     comp_folder = os.path.join(os.path.abspath('.'), app.config['UPLOAD_FOLDER'], run_id)
+#     os.makedirs(comp_folder)
+
+#     f_dem_path = os.path.join(comp_folder,secure_filename(f_dem.filename))
+#     f_lake_path = os.path.join(comp_folder,secure_filename(f_lake.filename))
+
+#     f_dem.save(f_dem_path)
+#     f_lake.save(f_lake_path)
+    
+#     resu_folder = os.path.join(os.path.abspath('.'), app.config['RESULT_FOLDER'], run_id)
+#     os.makedirs(resu_folder)
+
+#     cmd = 'python custom_produce.py ' + f_dem_path + ' ' + f_lake_path + ' ' + threshold + ' ' + resu_folder
+#     d = os.system(cmd)
+#     print("CMD status", d)
+
+#     shutil.make_archive(resu_folder, 'zip', resu_folder)
+
+#     shutil.rmtree(comp_folder)
+#     shutil.rmtree(resu_folder)
+
+#     result_zip = "/" + app.config['RESULT_FOLDER'] + "/" + run_id + '.zip'
+
+#     return result_zip
+
+
+@app.route('/runLISFloodModel', methods=['POST'])
+def runLISFloodModel():
+    param1 = request.form.get('param1')
+    param2 = request.form.get('param2')
+    param3 = request.form.get('param3')
+    
+    # 创建此次请求的工作空间
     run_id = str(time.time())
     comp_folder = os.path.join(os.path.abspath('.'), app.config['UPLOAD_FOLDER'], run_id)
     os.makedirs(comp_folder)
 
-    f_dem_path = os.path.join(comp_folder,secure_filename(f_dem.filename))
-    f_lake_path = os.path.join(comp_folder,secure_filename(f_lake.filename))
+    # 此处改为调用模型的代码
+    # cmd = 'python custom_produce.py ' + f_dem_path + ' ' + f_lake_path + ' ' + threshold + ' ' + resu_folder
+    # d = os.system(cmd)
+    # print("CMD status", d)
 
-    f_dem.save(f_dem_path)
-    f_lake.save(f_lake_path)
-    
-    resu_folder = os.path.join(os.path.abspath('.'), app.config['RESULT_FOLDER'], run_id)
-    os.makedirs(resu_folder)
-
-    cmd = 'python custom_produce.py ' + f_dem_path + ' ' + f_lake_path + ' ' + threshold + ' ' + resu_folder
-    d = os.system(cmd)
-    print("CMD status", d)
-
-    shutil.make_archive(resu_folder, 'zip', resu_folder)
 
     shutil.rmtree(comp_folder)
-    shutil.rmtree(resu_folder)
 
-    result_zip = "/" + app.config['RESULT_FOLDER'] + "/" + run_id + '.zip'
-
-    return result_zip
+    return "over!"
 
 
 if __name__ == "__main__":

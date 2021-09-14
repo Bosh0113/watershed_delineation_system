@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Prototype System for Basins' Data Using</title>
+    <title>小流域山洪灾害在线模拟系统</title>
     <script src="/static/js/jquery.min.js"></script>
     <script src="/static/js/vue.min.js"></script>
     <link rel="stylesheet" type="text/css" href="/static/css/iview.css"/>
@@ -17,6 +17,17 @@
     <style>
         body{
             margin: 0px
+        }
+        .systemTitle{
+            position: fixed;
+            top: 3px;
+            left: 50px;
+            z-index: 9999;
+            background-color: aliceblue;
+            font-weight: bold;
+            font-style: normal;
+            padding: 0px 10px;
+            font-size: x-large;
         }
         .map{
             height: calc(100vh);
@@ -54,11 +65,15 @@
             background-color: #2db7f5;
             color: white;
         }
+        .batchQueryDiv{
+            margin-bottom: 5px;
+        }
         .clickSwitch{
             margin-left: 5px;
         }
         .queryTypeDiv{
             padding: 0px 0px 0px 15px;
+            margin: 5px 0;
         }
         .uploadCSV{
             border: dashed 0.5px;
@@ -83,6 +98,11 @@
         }
         .csvInfo{
             margin-left: 15px;
+            width: 250px;
+        }
+        .csvLevelSelecter{
+            margin-left: 5px;
+            margin-bottom: 10px;
             width: 250px;
         }
         .geoJSONInfo{
@@ -133,15 +153,20 @@
             display: inline-block;
             margin-left: 10px;
         }
+        .modelBtn{
+            margin-top: 5px;
+            width: 264px;
+        }
     </style>
 </head>
 
 <body>
     <div id="vueApp">
+        <div class="systemTitle">小流域山洪灾害在线模拟系统</div>
         <div class="map" id="leafletMap"></div>
         <div id="controllerDiv">
             <vue-scroll :ops="scrollOps" id="controllerScroll">
-                <Card :bordered="false" class='controllerItemDiv'>
+                <!-- <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Custom Data Generation</strong>
                     <p>Reset the Parameters of Result Data:</p>
                     <div class="customDiv">
@@ -159,10 +184,10 @@
                             <p>Upload & Setting & Download</p>
                         </i-button>
                     </div>
-                </Card>
+                </Card> -->
                 <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Data Service Tools</strong>
-                    <div>
+                    <div class="batchQueryDiv">
                         <span>Batch Query Basin Scopes:</span>
                         <i-button size="small" type="primary" ghost class="uploadCSV" @click="showUploadCSVModal">
                             <Icon type="ios-cloud-upload" size="15"></Icon>
@@ -184,20 +209,25 @@
                             @on-change="changeQueryBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
                             </i-select>
-                            <Radio label="upstream" class="basinLabel" :disabled = "!querySwitch">
+                            <!-- <Radio label="upstream" class="basinLabel" :disabled = "!querySwitch">
                                 <span>Whole Upstream of Lakes</span>
                             </Radio>
                             <Radio label="whole" class="basinLabel" :disabled = "!querySwitch">
                                 <span>Whole Basins</span>
-                            </Radio>
+                            </Radio> -->
                         </Radio-group>
                     </div>
                     <div>
-                        <i-button v-if="showDownloadGeoJSONBtn" size="small" type="success" ghost @click="downloadRangeGeoJSON">
+                        <i-button :disabled="!showDownloadGeoJSONBtn" size="small" type="success" ghost @click="downloadRangeGeoJSON">
                             <p>Download Basin Boundary to GeoJSON</p>
                         </i-button>
                     </div>
-                    <Divider size="small" class="divider"></Divider>
+                    <div>
+                        <i-button class="modelBtn" :disabled="!showDownloadGeoJSONBtn" size="small" type="primary" ghost @click="showRunLisfloodModal">
+                            <p>Simulate Regional Flood Status</p>
+                        </i-button>
+                    </div>
+                    <!-- <Divider size="small" class="divider"></Divider>
                     <span>Download Data by Geometry:</span>
                     <div class="basinTypeDiv">
                         <div>
@@ -214,12 +244,12 @@
                                 <Icon type="md-download" size="20"></Icon>
                             </i-button>
                         </div>
-                    </div>
+                    </div> -->
                 </Card>
                 <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Data Layers Display</strong>
-                    <Checkbox v-model="riverCkb" @on-change="showRiverLayer">Rivers Layer</Checkbox>
-                    <Divider size="small" class="divider"></Divider>
+                    <!-- <Checkbox v-model="riverCkb" @on-change="showRiverLayer">Rivers Layer</Checkbox>
+                    <Divider size="small" class="divider"></Divider> -->
                     <Checkbox v-model="basinCkb" @on-change="showBasinsLayer">Basins Layer</Checkbox>
                     <div class="basinTypeDiv">
                         <Radio-group v-model="basinType" @on-change="changeBainsType">
@@ -231,20 +261,20 @@
                             @on-change="changeStandardBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
                             </i-select>
-                            <Radio label="custom" class="basinLabel" :disabled = "!basinCkb">
+                            <!-- <Radio label="custom" class="basinLabel" :disabled = "!basinCkb">
                                 <span>Basins & Lakes</span>
                             </Radio>
                             <i-select class="basinSelecter" v-model="levelSelectCustom" size="small" 
                             :disabled="!(basinCkb&&basinType=='custom')"
                             @on-change="changeCustomBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
-                            </i-select>
+                            </i-select> -->
                         </Radio-group>
                     </div>
-                    <Divider size="small" class="divider"></Divider>
+                    <!-- <Divider size="small" class="divider"></Divider>
                     <Checkbox v-model="wholeUpstreamCkb" @on-change="showWholeUpstreamLayer">Whole Upstream of Lake Layer</Checkbox>
                     <Divider size="small" class="divider"></Divider>
-                    <Checkbox v-model="wholeBasinCkb" @on-change="showWholeBasinLayer">Whole Basins Layer</Checkbox>
+                    <Checkbox v-model="wholeBasinCkb" @on-change="showWholeBasinLayer">Whole Basins Layer</Checkbox> -->
                 </Card>
             </vue-scroll>
         </div>
@@ -258,6 +288,12 @@
                     @click="cancelCSVSelect">
                         <Icon type="md-close" size="20"></Icon>
                     </i-button>
+                </div>
+                <div>
+                    <span>Selected Level:</span>
+                    <i-select class="csvLevelSelecter" v-model="csvQueryLevel" size="small">
+                        <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
+                    </i-select>
                 </div>
                 <Upload :max-size="1024*1024" type="drag" :before-upload="gatherCSVFile" action="-">
                     <div style="padding: 20px 0">
@@ -285,7 +321,57 @@
                 <i-button size="small" @click="uploadCSVModal=false">Close</i-button>
             </div>
         </Modal>
-        <Modal v-model="uploadGeoJSONModal" title="Upload GeoJSON" width="600" draggable>
+        <Modal v-model="lisfloodModal" title="Simulate Regional Flood Situation by LISFlood Model" width="500" draggable>
+            <h3 style="margin-bottom: 20px">Parameters for Running:</h3>
+            <i-form ref="paramData" :model="paramData" label-position="left" :label-width="100" :rules="paramValidate">
+                <Form-item label="Precipitation:">
+                    <i-input v-model="paramData.rainParam" placeholder="Precipitation (Unit: mm/hr)"></i-input>
+                </Form-item>
+                <Form-item label="Start time:">
+                    <Row>
+                        <i-col span="11">
+                            <Form-item prop="date">
+                                <Date-picker type="date" placeholder="Select date" v-model="paramData.startParamD"></Date-picker>
+                            </Form-item>
+                        </i-col>
+                        <i-col span="2" style="text-align: center">-</i-col>
+                        <i-col span="11">
+                            <Form-item prop="time">
+                                <Time-picker type="time" placeholder="Select time" v-model="paramData.startParamT"></Time-picker>
+                            </Form-item>
+                        </i-col>
+                    </Row>
+                </Form-item>
+                <Form-item label="End time:">
+                    <Row>
+                        <i-col span="11">
+                            <Form-item prop="date">
+                                <Date-picker type="date" placeholder="Select date" v-model="paramData.endParamD"></Date-picker>
+                            </Form-item>
+                        </i-col>
+                        <i-col span="2" style="text-align: center">-</i-col>
+                        <i-col span="11">
+                            <Form-item prop="time">
+                                <Time-picker type="time" placeholder="Select time" v-model="paramData.endParamT"></Time-picker>
+                            </Form-item>
+                        </i-col>
+                    </Row>
+                </Form-item>
+            </i-form>
+            <div class="runStatusDiv">
+                <i-button v-if="modelStatus=='modelSetting'" size="small" class="customOperationBtn" type="primary" ghost @click="runLFModel('paramData')">
+                    <p>Run</p>
+                </i-button>
+                <div v-else-if="modelStatus=='modelRunning'">
+                    <i-progress :percent="99.99" status="active" hide-info></i-progress>
+                    <span>Running...</span>
+                </div>
+            </div>
+            <div slot="footer">
+                <i-button size="small" @click="lisfloodModal=false">Close</i-button>
+            </div>
+        </Modal>
+        <!-- <Modal v-model="uploadGeoJSONModal" title="Upload GeoJSON" width="600" draggable>
             <div class="showGeoJSONInfoDiv">
                 <span>Selected File:</span>
                 <i-input v-model="geoJSONName" readonly class="geoJSONInfo" size="small"></i-input>
@@ -307,8 +393,8 @@
                 <i-button @click="uploadGeoJSONModal=false">Cancel</i-button>
                 <i-button type="success" @click="uploadGeoJSON()">Upload</i-button>
             </div>
-        </Modal>
-        <Modal v-model="downloadDataModal" title="Select Data to Download" width="1000" draggable>
+        </Modal> -->
+        <!-- <Modal v-model="downloadDataModal" title="Select Data to Download" width="1000" draggable>
             <h4>Basic Data:</h4>
             <div class="selectDataDiv">
                 <span>Hydrologically Adjusted Elevations</span>
@@ -437,9 +523,9 @@
                 <Form-item label="River Definition Threshold (Minimal Upstream Area, Unit: km2)">
                     <i-input v-model="customDataSetting.riverThreshold"></i-input>
                 </Form-item>
-                <!-- <Form-item label="Minimal Area of Lakes (Unit: km2)">
+                <Form-item label="Minimal Area of Lakes (Unit: km2)">
                     <i-input v-model="customDataSetting.lakeThreshold"></i-input>
-                </Form-item> -->
+                </Form-item>
             </i-form>
             <div class="runStatusDiv">
                 <i-button v-if="customStatus=='customSetting'" size="small" class="customOperationBtn" type="primary" ghost @click="runCustomData('customDataSetting')">
@@ -456,7 +542,7 @@
             <div slot="footer">
                 <i-button size="small" @click="customDataModal=false">Close</i-button>
             </div>
-        </Modal>
+        </Modal> -->
     </div>
     <script>
         var vueApp = new Vue({
@@ -479,8 +565,8 @@
                     riverCkb: false,
                     basinCkb:false,
                     basinType: 'standard',
-                    levelSelect: 1,
-                    levelSelectCustom: 1,
+                    levelSelect: 5,
+                    levelSelectCustom: 5,
                     levelLayerList:[],
                     basinLayer: null,
                     wholeUpstreamLayer:null,
@@ -494,6 +580,7 @@
                     batchStatus:"csvUpload",
                     basinRangesUrl:"",
                     uploadGeoJSONModal:false,
+                    lisfloodModal: false,
                     toUploadGeoJSON: null,
                     geoJSONName:"",
                     downloadDataModal:false,
@@ -508,10 +595,36 @@
                     resetDataModal:false,
                     customDataModal:false,
                     showDownloadGeoJSONBtn: false,
+                    csvQueryLevel: 5,
                     toDownloadGeoJSONStr: "",
                     querySwitch:false,
-                    queryType:"whole",
-                    levelSelectQuery:1,
+                    queryType:"standard",
+                    levelSelectQuery:5,
+                    paramData:{
+                        rainParam: "",
+                        startParamD: "",
+                        startParamT: "",
+                        endParamD: "",
+                        endParamT: ""
+                    },
+                    paramValidate:{
+                        rainParam:[
+                            { required: true, message: 'The value cannot be empty', trigger: 'blur' }
+                        ],
+                        startParamD:[
+                            { required: true, type: 'date', message: 'Please select the date', trigger: 'change' }
+                        ],
+                        startParamT:[
+                            { required: true, type: 'string', message: 'Please select time', trigger: 'change' }
+                        ],
+                        endParamD:[
+                            { required: true, type: 'date', message: 'Please select the date', trigger: 'change' }
+                        ],
+                        endParamT:[
+                            { required: true, type: 'string', message: 'Please select time', trigger: 'change' }
+                        ],
+                    },
+                    modelStatus:"modelSetting",
                     resetData:{
                         riverThreshold: 100.0,
                         lakeThreshold: 1000.0
@@ -557,7 +670,7 @@
             },
             methods:{
                 initLevelLabel(){
-                    for(i=1;i<13;i++){
+                    for(i=5;i<10;i++){
                         item = {
                             value: i,
                             label: 'level ' + i
@@ -566,7 +679,7 @@
                     }
                 },
                 initMap(){
-                    this.mapEl = L.map('leafletMap').setView([32.6, 116.6], 10);
+                    this.mapEl = L.map('leafletMap').setView([34, 110], 5);
                 },
                 initController(){
                     this.drawingLayerGroup = L.layerGroup([]);
@@ -687,7 +800,12 @@
                         this.basinLayer.remove();
                     }catch{}
                     var level = this.levelSelect;
-                    // this.basinLayer = L.tileLayer('http://172.21.213.155:8085/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
+                    this.basinLayer = L.tileLayer.wms('http://116.63.252.134:8080/geoserver/Basin_shp/wms',{
+                        layers: 'Asia_level_0' + level,
+                        format: 'image/png',
+                        transparent: true,
+                        noWarp:true
+                    }).addTo(this.mapEl);
                     console.log('Show Standard Basin Layer in Level ' + level + '.');
                 },
                 changeCustomBasinsLevel(){
@@ -765,7 +883,7 @@
                         var formData = new FormData();
                         formData.append('pointsCSV', this.toUploadCSV)
                         axios({
-                            url: "/basins/queryMultiScope",
+                            url: "/basins/queryMultiScope/" + this.csvQueryLevel,
                             method: "post",
                             data: formData
                         })
@@ -802,6 +920,72 @@
                         a.click();
                         $(a).remove();
                     };
+                },
+                showRunLisfloodModal(){
+                    this.modelStatus = "modelSetting";
+                    this.paramData = {
+                        rainParam: "",
+                        startParamD: "",
+                        startParamT: "",
+                        endParamD: "",
+                        endParamT: ""
+                    }
+                    this.lisfloodModal = true;
+                },
+                dateFormat(thisDate, fmt) {
+                    var o = {
+                    "M+": thisDate.getMonth() + 1, //月份
+                    "d+": thisDate.getDate(), //日
+                    "H+": thisDate.getHours(), //小时
+                    "m+": thisDate.getMinutes(), //分
+                    "s+": thisDate.getSeconds(), //秒
+                    "q+": Math.floor((thisDate.getMonth() + 3) / 3), //季度
+                    "S": thisDate.getMilliseconds() //毫秒
+                    };
+                    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (thisDate.getFullYear() + "").substr(4 - RegExp.$1.length));
+                    for (var k in o)
+                    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+                    return fmt;
+                },
+                runLFModel(name){
+                    this.$refs[name].validate((valid) => {
+                        if (valid) {
+                            this.$Message.success('Please wait for computation!');
+                            this.modelStatus="modelRunning";
+                            var startD = this.dateFormat(this.paramData.startParamD, "yyyy-MM-dd")
+                            var startDT = startD + '-' + this.paramData.startParamT;
+                            var endD = this.dateFormat(this.paramData.endParamD, "yyyy-MM-dd")
+                            var endDT = startD + '-' + this.paramData.endParamT;
+
+                            var formData = new FormData();
+                            formData.append('param1', this.paramData.rainParam)
+                            formData.append('param2', startDT)
+                            formData.append('param3', endDT)
+                            axios({
+                                url: "/runLISFloodModel",
+                                method: "post",
+                                data: formData
+                            })
+                            .then(res=>{
+                                console.log(res.data)
+                                this.$Message.success('Show Result on Map!');
+                                this.modelStatus = "over";
+                                this.lisfloodModal = false;
+                            })
+                            .catch(err=>{
+                                confirm('Run Custom Data Error!');
+                                this.modelStatus = "over";
+                                this.lisfloodModal = false;
+                            });
+                            
+                            // window.setTimeout(()=>{
+                            //     this.modelStatus = "over";
+                            //     this.lisfloodModal = false;
+                            //     confirm('Show results.');
+                            // }, 3000);
+                        } else {
+                            confirm('Value Can not be Empty.');
+                    }});
                 },
                 showUploadGeoJSONModal(){
                     this.toUploadGeoJSON = null;
@@ -1016,7 +1200,7 @@
                             switch(_this.queryType){
                                 case "standard":{
                                     //各级流域范围接口待补充
-                                    baseUrl = "/basins/querySubLevel" + this.levelSelectQuery;
+                                    baseUrl = "/basins/querySubLevel/" + this.levelSelectQuery;
                                     break;
                                 }
                                 case "upstream":{
