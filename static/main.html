@@ -10,10 +10,13 @@
     <link rel="stylesheet" type="text/css" href="/static/css/leaflet.css"/>
     <link rel="stylesheet" type="text/css" href="/static/css/leaflet.pm.css"/>
     <link rel="stylesheet" type="text/css" href="/static/css/vuescroll.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/css/leaflet.timedimension.control.min.css"/>
     <script src="/static/js/leaflet.js"></script>
     <script src="/static/js/leaflet.pm.min.js"></script>
     <script src="/static/js/axios.min.js"></script>
     <script src="/static/js/vuescroll.js"></script>
+    <script src="/static/js/iso8601.min.js"></script>
+    <script src="/static/js/leaflet.timedimension.min.js"></script>
     <style>
         body{
             margin: 0px
@@ -679,7 +682,12 @@
                     }
                 },
                 initMap(){
-                    this.mapEl = L.map('leafletMap').setView([34, 110], 5);
+                    this.mapEl = L.map('leafletMap',{
+                        zoom: 5,
+                        center: [34, 110],
+                        timeDimension: true,
+                        timeDimensionControl: true,
+                    });
                 },
                 initController(){
                     this.drawingLayerGroup = L.layerGroup([]);
@@ -947,6 +955,20 @@
                     if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
                     return fmt;
                 },
+                showSimulationURL(wmsUrl, startTime, endTime){
+
+                    var newAvailableTimes = L.TimeDimension.Util.explodeTimeRange(new Date(startTime), new Date(endTime), 'PT30M');
+                    this.mapEl.timeDimension.setAvailableTimes(newAvailableTimes, 'replace');
+
+                    var wmsLayer = L.tileLayer.wms(wmsUrl, {
+                        layers: 'Band1',
+                        format: 'image/png',
+                        transparent: true,
+                        noWarp: true
+                    });
+                    var tdWmsLayer = L.timeDimension.layer.wms(wmsLayer);
+                    tdWmsLayer.addTo(this.mapEl);
+                },
                 runLFModel(name){
                     this.$refs[name].validate((valid) => {
                         if (valid) {
@@ -958,6 +980,7 @@
                             var endDT = startD + '-' + this.paramData.endParamT;
 
                             var formData = new FormData();
+                            formData.append('geojsonStr', this.toDownloadGeoJSONStr)
                             formData.append('param1', this.paramData.rainParam)
                             formData.append('param2', startDT)
                             formData.append('param3', endDT)
@@ -968,6 +991,10 @@
                             })
                             .then(res=>{
                                 console.log(res.data)
+                                var lisfloodResultURL = res.data;                    
+                                var startTime = this.dateFormat(this.paramData.startParamD, "yyyy-MM-dd") + "T" + this.paramData.startParamT + "Z";
+                                var endTime = this.dateFormat(this.paramData.endParamD, "yyyy-MM-dd") + "T" + this.paramData.endParamT + "Z";
+                                this.showSimulationURL(lisfloodResultURL, startTime, endTime);
                                 this.$Message.success('Show Result on Map!');
                                 this.modelStatus = "over";
                                 this.lisfloodModal = false;
@@ -979,10 +1006,13 @@
                             });
                             
                             // window.setTimeout(()=>{
+                            //     confirm('Show results.');
+                            //     var lisfloodResultURL = "http://116.63.252.134:8080/geoserver/nc_test/wms";
+                            //     this.showSimulationURL(lisfloodResultURL, "2019-01-09T00:00:00Z", "2019-01-09T08:00:00Z");
                             //     this.modelStatus = "over";
                             //     this.lisfloodModal = false;
-                            //     confirm('Show results.');
                             // }, 3000);
+
                         } else {
                             confirm('Value Can not be Empty.');
                     }});

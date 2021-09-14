@@ -186,6 +186,10 @@ def workprocess(workpath, rainvol,date_begin,date_end):
     [copyfile(i, filepath + '/lisfloodfp/' + os.path.basename(i)) for i in glob(filepath + '/lfptools/*.asc')]
 
 
+def lisFlood_Run(workspace, param1, param2, param3):
+    workprocess(workspace, param1, param2, param3)
+
+
 if __name__ == '__main__':
     path = sys.argv[1]  # 改
     rainvol = sys.argv[2]

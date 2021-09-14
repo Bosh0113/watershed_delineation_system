@@ -6,6 +6,8 @@ import time
 import shutil
 import csv
 
+import modelDataWork as mdw
+
 
 app = Flask(__name__)
 myclient = pymongo.MongoClient('mongodb://localhost:27017/')
@@ -128,6 +130,7 @@ def queryMultiScope():
 
 @app.route('/runLISFloodModel', methods=['POST'])
 def runLISFloodModel():
+    geojsonStr = request.form.get('geojsonStr')
     param1 = request.form.get('param1')
     param2 = request.form.get('param2')
     param3 = request.form.get('param3')
@@ -137,15 +140,17 @@ def runLISFloodModel():
     comp_folder = os.path.join(os.path.abspath('.'), app.config['UPLOAD_FOLDER'], run_id)
     os.makedirs(comp_folder)
 
-    # 此处改为调用模型的代码
-    # cmd = 'python custom_produce.py ' + f_dem_path + ' ' + f_lake_path + ' ' + threshold + ' ' + resu_folder
-    # d = os.system(cmd)
-    # print("CMD status", d)
+    #生成geojson文件
+    geojson_path = comp_folder + '/basin.geojson'
+    with open(comp_folder, 'w') as w:
+        w.write(geojsonStr)
 
+    # 调用模型的代码
+    result_server = mdw.lisFlood_Run(comp_folder, param1, param2, param3)
 
     shutil.rmtree(comp_folder)
 
-    return "over!"
+    return result_server
 
 
 if __name__ == "__main__":
