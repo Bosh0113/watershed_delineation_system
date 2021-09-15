@@ -10,7 +10,8 @@ import modelDataWork as mdw
 
 
 app = Flask(__name__)
-myclient = pymongo.MongoClient('mongodb://localhost:27017/')
+# myclient = pymongo.MongoClient('mongodb://localhost:27017/')
+myclient = pymongo.MongoClient('mongodb://116.63.252.134:7070/')
 mydb = myclient["BasinsDataBase"]
 app.config['UPLOAD_FOLDER'] = 'static/compute'
 app.config['RESULT_FOLDER'] = 'static/results'
@@ -154,4 +155,4 @@ def runLISFloodModel():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run('0.0.0.0', 5000)

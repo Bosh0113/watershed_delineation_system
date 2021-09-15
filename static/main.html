@@ -548,7 +548,7 @@
         </Modal> -->
     </div>
     
-    <script src="/static/data/demo.js"></script>
+    <!-- <script src="/static/data/demo.js"></script> -->
     <script>
         var vueApp = new Vue({
             el: "#vueApp",
@@ -1225,44 +1225,50 @@
                     });
                     this.mapEl.on('click', e=>{
                         if(_this.querySwitch){
-                            // var latlng = e.latlng
-                            // var lon = latlng['lng'];
-                            // var lat = latlng['lat'];
-                            // var baseUrl="";
-                            // switch(_this.queryType){
-                            //     case "standard":{
-                            //         //各级流域范围接口待补充
-                            //         baseUrl = "/basins/querySubLevel/" + this.levelSelectQuery;
-                            //         break;
-                            //     }
-                            //     case "upstream":{
-                            //         //水体上游范围接口待补充
-                            //         baseUrl = "/basins/upstream";
-                            //         break;
-                            //     }
-                            //     case "whole":{
-                            //         //临时写法
-                            //         baseUrl = "/basins/queryScope"
-                            //     }
-                            // }
-                            // axios
-                            // .get(baseUrl + "?lon=" + lon +"&lat=" + lat)
-                            // .then(res=>{
-                            //     if(res.data!=0){
-                            //         var tempGeoJSON = res.data;
-                            //         _this.showDownloadGeoJSONBtn = true;
-                            //         _this.toDownloadGeoJSONStr = tempGeoJSON;
-                            //         _this.addGeoJSONToMap(JSON.stringify(tempGeoJSON), "red");
-                            //     }
-                            //     else{
-                            //         confirm('No Basin Info Here.');
-                            //     };
-                            // })
-                            // .catch(err=>{});
+                            var latlng = e.latlng
+                            var lon = latlng['lng'];
+                            var lat = latlng['lat'];
+                            var baseUrl="";
+                            switch(_this.queryType){
+                                case "standard":{
+                                    //各级流域范围接口待补充
+                                    baseUrl = "/basins/querySubLevel/" + this.levelSelectQuery;
+                                    break;
+                                }
+                                case "upstream":{
+                                    //水体上游范围接口待补充
+                                    baseUrl = "/basins/upstream";
+                                    break;
+                                }
+                                case "whole":{
+                                    //临时写法
+                                    baseUrl = "/basins/queryScope"
+                                }
+                            }
+                            this.$Spin.show();
+                            axios
+                            .get(baseUrl + "?lon=" + lon +"&lat=" + lat)
+                            .then(res=>{
+                                if(res.data!=0){
+                                    var tempGeoJSON = res.data;
+                                    _this.showDownloadGeoJSONBtn = true;
+                                    _this.toDownloadGeoJSONStr = tempGeoJSON;
+                                    _this.addGeoJSONToMap(JSON.stringify(tempGeoJSON), "red");
+                                    _this.$Spin.hide();
+                                }
+                                else{
+                                    _this.$Message.error('No Basin Info Here.');
+                                    _this.$Spin.hide();
+                                };
+                            })
+                            .catch(err=>{
+                                confirm('Something Wrong!');
+                                _this.$Spin.hide();
+                            });
 
-                            this.showDownloadGeoJSONBtn = true;
-                            this.toDownloadGeoJSONStr = basin_scale;
-                            this.addGeoJSONToMap(JSON.stringify(basin_scale), "red");
+                            // this.showDownloadGeoJSONBtn = true;
+                            // this.toDownloadGeoJSONStr = basin_scale;
+                            // this.addGeoJSONToMap(JSON.stringify(basin_scale), "red");
                             
                         }
                     });
