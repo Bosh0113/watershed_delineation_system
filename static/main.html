@@ -982,7 +982,7 @@
                             var endDT = startD + '-' + this.paramData.endParamT;
 
                             var formData = new FormData();
-                            formData.append('geojsonStr', this.toDownloadGeoJSONStr)
+                            formData.append('geojsonStr', JSON.stringify(this.toDownloadGeoJSONStr))
                             formData.append('param1', this.paramData.rainParam)
                             formData.append('param2', startDT)
                             formData.append('param3', endDT)
