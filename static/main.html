@@ -190,13 +190,13 @@
                 </Card> -->
                 <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Data Service Tools</strong>
-                    <div class="batchQueryDiv">
+                    <!-- <div class="batchQueryDiv">
                         <span>Batch Query Basin Scopes:</span>
                         <i-button size="small" type="primary" ghost class="uploadCSV" @click="showUploadCSVModal">
                             <Icon type="ios-cloud-upload" size="15"></Icon>
                             <Icon type="ios-cloud-download" size="15"></Icon>
                         </i-button>
-                    </div>
+                    </div> -->
                     <span>Query Basin Scope by Click:</span>
                     <i-switch class="clickSwitch" size="large" @on-change="changeQueryBasinBtn" v-model="querySwitch">
                         <Icon slot="open" type="md-pin" size="20"></Icon>
@@ -205,13 +205,16 @@
                     <div class="queryTypeDiv">
                         <Radio-group v-model="queryType" @on-change="changeQueryType">
                             <Radio label="standard" class="basinLabel" :disabled = "!querySwitch">
+                                <span>Standard Basins: <span>level {{levelSelect}}</span></span>
+                            </Radio>
+                            <!-- <Radio label="standard" class="basinLabel" :disabled = "!querySwitch">
                                 <span>Standard Basins</span>
                             </Radio>
                             <i-select class="basinSelecter" v-model="levelSelectQuery" size="small" 
                             :disabled="!(querySwitch&&queryType=='standard')"
                             @on-change="changeQueryBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
-                            </i-select>
+                            </i-select> -->
                             <!-- <Radio label="upstream" class="basinLabel" :disabled = "!querySwitch">
                                 <span>Whole Upstream of Lakes</span>
                             </Radio>
@@ -285,18 +288,12 @@
             <div v-if="batchStatus=='csvUpload'">
                 <div class="showGeoJSONInfoDiv">
                     <span>Selected File:</span>
-                    <i-input v-model="csvName" readonly class="csvInfo" size="small"></i-input>
+                    <i-input v-model="csvName" readonly class="csvInfo" size="small" :border="false" placeholder="Please select csv file..."></i-input>
                     <i-button v-if="csvName!=''" size="small" 
                     class="fileBtnHoverRed" id="removeCSVSelect"
                     @click="cancelCSVSelect">
                         <Icon type="md-close" size="20"></Icon>
                     </i-button>
-                </div>
-                <div>
-                    <span>Selected Level:</span>
-                    <i-select class="csvLevelSelecter" v-model="csvQueryLevel" size="small">
-                        <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
-                    </i-select>
                 </div>
                 <Upload :max-size="1024*1024" type="drag" :before-upload="gatherCSVFile" action="-">
                     <div style="padding: 20px 0">
@@ -306,6 +303,12 @@
                         </p>
                     </div>
                 </Upload>
+                <div>
+                    <span>Selected Level: {{levelSelect}}</span>
+                    <!-- <i-select class="csvLevelSelecter" v-model="csvQueryLevel" size="small">
+                        <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
+                    </i-select> -->
+                </div>
             </div>
             <div v-else-if="batchStatus=='basinRunning'">
                 <i-progress :percent="99.99" status="active" hide-info></i-progress>
@@ -560,6 +563,8 @@
                 this.initController();
                 this.initLayers();
                 this.listenDraw();
+                this.showRiverLayer(this.riverCkb);
+                this.showBasinsLayer(this.basinCkb);
             },
             data(){
                 return {
@@ -568,9 +573,9 @@
                     drawingLayerGroup: null,
                     riverLayer: null,
                     riverCkb: false,
-                    basinCkb:false,
+                    basinCkb:true,
                     basinType: 'standard',
-                    levelSelect: 5,
+                    levelSelect: 7,
                     levelSelectCustom: 5,
                     levelLayerList:[],
                     basinLayer: null,
@@ -600,7 +605,7 @@
                     resetDataModal:false,
                     customDataModal:false,
                     showDownloadGeoJSONBtn: false,
-                    csvQueryLevel: 5,
+                    // csvQueryLevel: 5,
                     toDownloadGeoJSONStr: "",
                     querySwitch:false,
                     queryType:"standard",
@@ -779,7 +784,9 @@
                     }
                     else{
                         // console.log('Hide River Layer.');
-                        this.riverLayer.remove();
+                        try{
+                            this.riverLayer.remove();
+                        }catch{}
                     }
                 },
                 showBasinsLayer(show){
@@ -893,7 +900,8 @@
                         var formData = new FormData();
                         formData.append('pointsCSV', this.toUploadCSV)
                         axios({
-                            url: "/basins/queryMultiScope/" + this.csvQueryLevel,
+                            // url: "/basins/queryMultiScope/" + this.csvQueryLevel,
+                            url: "/basins/queryMultiScope/" + this.levelSelect,
                             method: "post",
                             data: formData
                         })
@@ -1232,7 +1240,8 @@
                             switch(_this.queryType){
                                 case "standard":{
                                     //各级流域范围接口待补充
-                                    baseUrl = "/basins/querySubLevel/" + this.levelSelectQuery;
+                                    // baseUrl = "/basins/querySubLevel/" + this.levelSelectQuery;
+                                    baseUrl = "/basins/querySubLevel/" + this.levelSelect;
                                     break;
                                 }
                                 case "upstream":{
