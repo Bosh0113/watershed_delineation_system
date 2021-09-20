@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Prototype System for Basins' Data Using</title>
+    <title>小流域山洪灾害在线模拟系统</title>
     <script src="/static/js/jquery.min.js"></script>
     <script src="/static/js/vue.min.js"></script>
     <link rel="stylesheet" type="text/css" href="/static/css/iview.css"/>
@@ -10,13 +10,30 @@
     <link rel="stylesheet" type="text/css" href="/static/css/leaflet.css"/>
     <link rel="stylesheet" type="text/css" href="/static/css/leaflet.pm.css"/>
     <link rel="stylesheet" type="text/css" href="/static/css/vuescroll.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/css/leaflet.timedimension.control.min.css"/>
+    <link rel="stylesheet" href="https://iclient.supermap.io/dist/leaflet/iclient-leaflet.min.css" />
     <script src="/static/js/leaflet.js"></script>
     <script src="/static/js/leaflet.pm.min.js"></script>
     <script src="/static/js/axios.min.js"></script>
     <script src="/static/js/vuescroll.js"></script>
+    <script src="/static/js/iso8601.min.js"></script>
+    <script src="/static/js/leaflet.timedimension.min.js"></script>
+    <script type="text/javascript" src="https://iclient.supermap.io/dist/leaflet/iclient-leaflet.js"></script>
     <style>
         body{
             margin: 0px
+        }
+        .systemTitle{
+            position: fixed;
+            top: 10px;
+            left: 50px;
+            z-index: 9998;
+            background-color: aliceblue;
+            font-weight: bold;
+            font-style: normal;
+            padding: 10px 16px;
+            font-size: 48px;
+            letter-spacing: 3px;
         }
         .map{
             height: calc(100vh);
@@ -33,9 +50,13 @@
             display: flex;
             flex-direction: column-reverse;
         }
+        .zZindex{
+            z-index:9999 !important;
+        }
         .controllerItemDiv{
             background-color:#f0f8ff85;
             margin-top: 10px;
+            margin-bottom: 10px;
         }
         .basinTypeDiv{
             padding: 0px 0px 0px 15px;
@@ -54,11 +75,19 @@
             background-color: #2db7f5;
             color: white;
         }
+        .batchQueryDiv{
+            margin-bottom: 5px;
+        }
         .clickSwitch{
             margin-left: 5px;
         }
         .queryTypeDiv{
             padding: 0px 0px 0px 15px;
+            margin: 5px 0;
+        }
+        .uploadCSV{
+            border: dashed 0.5px;
+            margin-left: 5px;
         }
         .uploadGeoJSON{
             border: dashed 0.5px;
@@ -77,6 +106,15 @@
         .showGeoJSONInfoDiv{
             margin-bottom: 5px;
         }
+        .csvInfo{
+            margin-left: 15px;
+            width: 250px;
+        }
+        .csvLevelSelecter{
+            margin-left: 5px;
+            margin-bottom: 10px;
+            width: 250px;
+        }
         .geoJSONInfo{
             margin-left: 15px;
             width: 250px;
@@ -85,7 +123,13 @@
             background-color: #ed4014;
             color: white;
         }
-        .removeGeoJSONSelect{
+        .removeCSVSelect{
+            margin-left: 5px;
+        }
+        #removeCSVSelect{
+            margin-left: 5px;
+        }
+        #removeGeoJSONSelect{
             margin-left: 5px;
         }
         .selectDataDiv{
@@ -103,6 +147,9 @@
         .resetOperationBtn{
             width:350px;
         }
+        .downloadBasinsBtnDiv{
+            text-align: center;
+        }
         .customOperationBtn{
             width:350px;
         }
@@ -116,15 +163,20 @@
             display: inline-block;
             margin-left: 10px;
         }
+        .modelBtn{
+            margin-top: 5px;
+            width: 264px;
+        }
     </style>
 </head>
 
 <body>
     <div id="vueApp">
+        <div class="systemTitle">小流域山洪灾害在线模拟系统</div>
         <div class="map" id="leafletMap"></div>
         <div id="controllerDiv">
             <vue-scroll :ops="scrollOps" id="controllerScroll">
-                <Card :bordered="false" class='controllerItemDiv'>
+                <!-- <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Custom Data Generation</strong>
                     <p>Reset the Parameters of Result Data:</p>
                     <div class="customDiv">
@@ -142,9 +194,16 @@
                             <p>Upload & Setting & Download</p>
                         </i-button>
                     </div>
-                </Card>
+                </Card> -->
                 <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Data Service Tools</strong>
+                    <div class="batchQueryDiv">
+                        <span>Batch Query Basin Scopes:</span>
+                        <i-button size="small" type="primary" ghost class="uploadCSV" @click="showUploadCSVModal">
+                            <Icon type="ios-cloud-upload" size="15"></Icon>
+                            <Icon type="ios-cloud-download" size="15"></Icon>
+                        </i-button>
+                    </div>
                     <span>Query Basin Scope by Click:</span>
                     <i-switch class="clickSwitch" size="large" @on-change="changeQueryBasinBtn" v-model="querySwitch">
                         <Icon slot="open" type="md-pin" size="20"></Icon>
@@ -160,15 +219,25 @@
                             @on-change="changeQueryBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
                             </i-select>
-                            <Radio label="upstream" class="basinLabel" :disabled = "!querySwitch">
+                            <!-- <Radio label="upstream" class="basinLabel" :disabled = "!querySwitch">
                                 <span>Whole Upstream of Lakes</span>
                             </Radio>
                             <Radio label="whole" class="basinLabel" :disabled = "!querySwitch">
                                 <span>Whole Basins</span>
-                            </Radio>
+                            </Radio> -->
                         </Radio-group>
                     </div>
-                    <Divider size="small" class="divider"></Divider>
+                    <div>
+                        <i-button :disabled="!showDownloadGeoJSONBtn" size="small" type="success" ghost @click="downloadRangeGeoJSON">
+                            <p>Download Basin Boundary to GeoJSON</p>
+                        </i-button>
+                    </div>
+                    <div>
+                        <i-button class="modelBtn" :disabled="!showDownloadGeoJSONBtn" size="small" type="primary" ghost @click="showRunLisfloodModal">
+                            <p>Simulate Regional Flood Status</p>
+                        </i-button>
+                    </div>
+                    <!-- <Divider size="small" class="divider"></Divider>
                     <span>Download Data by Geometry:</span>
                     <div class="basinTypeDiv">
                         <div>
@@ -185,12 +254,12 @@
                                 <Icon type="md-download" size="20"></Icon>
                             </i-button>
                         </div>
-                    </div>
+                    </div> -->
                 </Card>
                 <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Data Layers Display</strong>
-                    <Checkbox v-model="riverCkb" @on-change="showRiverLayer">Rivers Layer</Checkbox>
-                    <Divider size="small" class="divider"></Divider>
+                    <!-- <Checkbox v-model="riverCkb" @on-change="showRiverLayer">Rivers Layer</Checkbox>
+                    <Divider size="small" class="divider"></Divider> -->
                     <Checkbox v-model="basinCkb" @on-change="showBasinsLayer">Basins Layer</Checkbox>
                     <div class="basinTypeDiv">
                         <Radio-group v-model="basinType" @on-change="changeBainsType">
@@ -202,24 +271,117 @@
                             @on-change="changeStandardBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
                             </i-select>
-                            <Radio label="custom" class="basinLabel" :disabled = "!basinCkb">
+                            <!-- <Radio label="custom" class="basinLabel" :disabled = "!basinCkb">
                                 <span>Basins & Lakes</span>
                             </Radio>
                             <i-select class="basinSelecter" v-model="levelSelectCustom" size="small" 
                             :disabled="!(basinCkb&&basinType=='custom')"
                             @on-change="changeCustomBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
-                            </i-select>
+                            </i-select> -->
                         </Radio-group>
                     </div>
-                    <Divider size="small" class="divider"></Divider>
+                    <!-- <Divider size="small" class="divider"></Divider>
                     <Checkbox v-model="wholeUpstreamCkb" @on-change="showWholeUpstreamLayer">Whole Upstream of Lake Layer</Checkbox>
                     <Divider size="small" class="divider"></Divider>
-                    <Checkbox v-model="wholeBasinCkb" @on-change="showWholeBasinLayer">Whole Basins Layer</Checkbox>
+                    <Checkbox v-model="wholeBasinCkb" @on-change="showWholeBasinLayer">Whole Basins Layer</Checkbox> -->
                 </Card>
             </vue-scroll>
         </div>
-        <Modal v-model="uploadGeoJSONModal" title="Upload GeoJSON" width="600" draggable>
+        <Modal v-model="uploadCSVModal" title="Upload CSV to Batch Query Basin Scopes" width="600" draggable>
+            <div v-if="batchStatus=='csvUpload'">
+                <div class="showGeoJSONInfoDiv">
+                    <span>Selected File:</span>
+                    <i-input v-model="csvName" readonly class="csvInfo" size="small"></i-input>
+                    <i-button v-if="csvName!=''" size="small" 
+                    class="fileBtnHoverRed" id="removeCSVSelect"
+                    @click="cancelCSVSelect">
+                        <Icon type="md-close" size="20"></Icon>
+                    </i-button>
+                </div>
+                <div>
+                    <span>Selected Level:</span>
+                    <i-select class="csvLevelSelecter" v-model="csvQueryLevel" size="small">
+                        <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
+                    </i-select>
+                </div>
+                <Upload :max-size="1024*1024" type="drag" :before-upload="gatherCSVFile" action="-">
+                    <div style="padding: 20px 0">
+                        <Icon type="ios-cloud-upload" size="50" style="color: #3399ff"></Icon>
+                        <p>
+                            Click or Drag CSV File here to Upload.
+                        </p>
+                    </div>
+                </Upload>
+            </div>
+            <div v-else-if="batchStatus=='basinRunning'">
+                <i-progress :percent="99.99" status="active" hide-info></i-progress>
+                <span>Running...</span>
+            </div>
+            <div v-else-if="batchStatus=='basinDownload' && basinRangesUrl!=''" class="downloadBasinsBtnDiv">
+                <i-button size="small" class="customOperationBtn" type="success" ghost @click="downloadMultiBasins()">
+                    <p>Download</p>
+                </i-button>
+            </div>
+            <div slot="footer" v-if="batchStatus=='csvUpload'">
+                <i-button @click="uploadCSVModal=false">Cancel</i-button>
+                <i-button type="success" @click="uploadCSV()">Upload</i-button>
+            </div>
+            <div slot="footer" v-else>
+                <i-button size="small" @click="uploadCSVModal=false">Close</i-button>
+            </div>
+        </Modal>
+        <Modal v-model="lisfloodModal" title="Simulate Regional Flood Situation by LISFlood Model" width="500" draggable>
+            <h3 style="margin-bottom: 20px">Parameters for Running:</h3>
+            <i-form ref="paramData" :model="paramData" label-position="left" :label-width="100" :rules="paramValidate">
+                <Form-item label="Precipitation:">
+                    <i-input v-model="paramData.rainParam" placeholder="Precipitation (Unit: mm/hr)"></i-input>
+                </Form-item>
+                <Form-item label="Start time:">
+                    <Row>
+                        <i-col span="11">
+                            <Form-item prop="date">
+                                <Date-picker type="date" placeholder="Select date" v-model="paramData.startParamD"></Date-picker>
+                            </Form-item>
+                        </i-col>
+                        <i-col span="2" style="text-align: center">-</i-col>
+                        <i-col span="11">
+                            <Form-item prop="time">
+                                <Time-picker type="time" placeholder="Select time" v-model="paramData.startParamT"></Time-picker>
+                            </Form-item>
+                        </i-col>
+                    </Row>
+                </Form-item>
+                <Form-item label="End time:">
+                    <Row>
+                        <i-col span="11">
+                            <Form-item prop="date">
+                                <Date-picker type="date" placeholder="Select date" v-model="paramData.endParamD"></Date-picker>
+                            </Form-item>
+                        </i-col>
+                        <i-col span="2" style="text-align: center">-</i-col>
+                        <i-col span="11">
+                            <Form-item prop="time">
+                                <Time-picker type="time" placeholder="Select time" v-model="paramData.endParamT"></Time-picker>
+                            </Form-item>
+                        </i-col>
+                    </Row>
+                </Form-item>
+            </i-form>
+            <div class="runStatusDiv">
+                <i-button v-if="modelStatus=='modelSetting'" size="small" class="customOperationBtn" type="primary" ghost @click="runLFModel('paramData')">
+                    <p>Run</p>
+                </i-button>
+                <div v-else-if="modelStatus=='modelRunning'">
+                    <i-progress :percent="99.99" status="active" hide-info></i-progress>
+                    <span>Running...</span>
+                </div>
+            </div>
+            <div slot="footer">
+                <i-button size="small" @click="lisfloodModal=false">Close</i-button>
+            </div>
+        </Modal>
+        <!-- <Modal v-model="uploadGeoJSONModal" title="Upload GeoJSON" width="600" draggable>
             <div class="showGeoJSONInfoDiv">
                 <span>Selected File:</span>
                 <i-input v-model="geoJSONName" readonly class="geoJSONInfo" size="small"></i-input>
@@ -241,8 +403,8 @@
                 <i-button @click="uploadGeoJSONModal=false">Cancel</i-button>
                 <i-button type="success" @click="uploadGeoJSON()">Upload</i-button>
             </div>
-        </Modal>
-        <Modal v-model="downloadDataModal" title="Select Data to Download" width="1000" draggable>
+        </Modal> -->
+        <!-- <Modal v-model="downloadDataModal" title="Select Data to Download" width="1000" draggable>
             <h4>Basic Data:</h4>
             <div class="selectDataDiv">
                 <span>Hydrologically Adjusted Elevations</span>
@@ -371,9 +533,9 @@
                 <Form-item label="River Definition Threshold (Minimal Upstream Area, Unit: km2)">
                     <i-input v-model="customDataSetting.riverThreshold"></i-input>
                 </Form-item>
-                <!-- <Form-item label="Minimal Area of Lakes (Unit: km2)">
+                <Form-item label="Minimal Area of Lakes (Unit: km2)">
                     <i-input v-model="customDataSetting.lakeThreshold"></i-input>
-                </Form-item> -->
+                </Form-item>
             </i-form>
             <div class="runStatusDiv">
                 <i-button v-if="customStatus=='customSetting'" size="small" class="customOperationBtn" type="primary" ghost @click="runCustomData('customDataSetting')">
@@ -390,8 +552,10 @@
             <div slot="footer">
                 <i-button size="small" @click="customDataModal=false">Close</i-button>
             </div>
-        </Modal>
+        </Modal> -->
     </div>
+    
+    <!-- <script src="/static/data/demo.js"></script> -->
     <script>
         var vueApp = new Vue({
             el: "#vueApp",
@@ -413,8 +577,8 @@
                     riverCkb: false,
                     basinCkb:false,
                     basinType: 'standard',
-                    levelSelect: 1,
-                    levelSelectCustom: 1,
+                    levelSelect: 5,
+                    levelSelectCustom: 5,
                     levelLayerList:[],
                     basinLayer: null,
                     wholeUpstreamLayer:null,
@@ -422,7 +586,13 @@
                     wholeBasinLayer: null,
                     wholeBasinCkb:false,
                     wholeUpstreamCkb:false,
+                    uploadCSVModal:false,
+                    toUploadCSV: null,
+                    csvName: "",
+                    batchStatus:"csvUpload",
+                    basinRangesUrl:"",
                     uploadGeoJSONModal:false,
+                    lisfloodModal: false,
                     toUploadGeoJSON: null,
                     geoJSONName:"",
                     downloadDataModal:false,
@@ -436,9 +606,37 @@
                     loadingRiver:false,
                     resetDataModal:false,
                     customDataModal:false,
+                    showDownloadGeoJSONBtn: false,
+                    csvQueryLevel: 5,
+                    toDownloadGeoJSONStr: "",
                     querySwitch:false,
-                    queryType:"whole",
-                    levelSelectQuery:1,
+                    queryType:"standard",
+                    levelSelectQuery:5,
+                    paramData:{
+                        rainParam: "",
+                        startParamD: "",
+                        startParamT: "",
+                        endParamD: "",
+                        endParamT: ""
+                    },
+                    paramValidate:{
+                        rainParam:[
+                            { required: true, message: 'The value cannot be empty', trigger: 'blur' }
+                        ],
+                        startParamD:[
+                            { required: true, type: 'date', message: 'Please select the date', trigger: 'change' }
+                        ],
+                        startParamT:[
+                            { required: true, type: 'string', message: 'Please select time', trigger: 'change' }
+                        ],
+                        endParamD:[
+                            { required: true, type: 'date', message: 'Please select the date', trigger: 'change' }
+                        ],
+                        endParamT:[
+                            { required: true, type: 'string', message: 'Please select time', trigger: 'change' }
+                        ],
+                    },
+                    modelStatus:"modelSetting",
                     resetData:{
                         riverThreshold: 100.0,
                         lakeThreshold: 1000.0
@@ -484,7 +682,7 @@
             },
             methods:{
                 initLevelLabel(){
-                    for(i=1;i<13;i++){
+                    for(i=5;i<10;i++){
                         item = {
                             value: i,
                             label: 'level ' + i
@@ -493,7 +691,13 @@
                     }
                 },
                 initMap(){
-                    this.mapEl = L.map('leafletMap').setView([32.6, 116.6], 10);
+                    this.mapEl = L.map('leafletMap',{
+                        zoom: 5,
+                        center: [34, 110],
+                        crs: L.CRS.TianDiTu_WGS84,
+                        timeDimension: true,
+                        timeDimensionControl: true,
+                    });
                 },
                 initController(){
                     this.drawingLayerGroup = L.layerGroup([]);
@@ -501,58 +705,108 @@
                 },
                 initLayers(){
                     // 图层控件
-                    var mapboxVectorMap = 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYm9zaDAxMTMiLCJhIjoiY2tsM3FicnprMTMyZTJvbzRpeXF4Y2ZoOSJ9.JFmrSXBF0bTcqyXXnWjLYQ';
-                    var vectorMap = L.tileLayer(mapboxVectorMap, { maxZoom: 18 });
-                    var vector = L.layerGroup([vectorMap]);
+                    // var mapboxVectorMap = 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYm9zaDAxMTMiLCJhIjoiY2tsM3FicnprMTMyZTJvbzRpeXF4Y2ZoOSJ9.JFmrSXBF0bTcqyXXnWjLYQ';
+                    // var vectorMap = L.tileLayer(mapboxVectorMap, { maxZoom: 18 });
+                    // var vector = L.layerGroup([vectorMap]);
 
                     
-                    var osmVectorMap = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-                    var osmVectorMap = L.tileLayer(osmVectorMap, { maxZoom: 18 });
-                    var vectorOSM = L.layerGroup([osmVectorMap]);
+                    // var osmVectorMap = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    // var osmVectorMap = L.tileLayer(osmVectorMap, { maxZoom: 18 });
+                    // var vectorOSM = L.layerGroup([osmVectorMap]);
                     
-                    var tdtImgMap =
-                        "http://t0.tianditu.gov.cn/img_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
-                        "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
-                    var tdtImgAno =
-                        "http://t0.tianditu.gov.cn/eia_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
-                        "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=eia&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
-                    var satelliteMap = L.tileLayer(tdtImgMap, {
-                        maxZoom: 18,
-                        attribution:
-                            '&copy; <a href="http://map.tianditu.gov.cn/">tianditu</a> contributors'
-                    });
-                    var satelliteAno = L.tileLayer(tdtImgAno, { maxZoom: 18 });
-                    var satellite = L.layerGroup([satelliteMap, satelliteAno]);
+                    // var tdtImgMap =
+                    //     "http://t0.tianditu.gov.cn/img_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
+                    //     "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+                    // var tdtImgAno =
+                    //     "http://t0.tianditu.gov.cn/eia_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
+                    //     "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=eia&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+                    // var satelliteMap = L.tileLayer(tdtImgMap, {
+                    //     maxZoom: 18,
+                    //     attribution:
+                    //         '&copy; <a href="http://map.tianditu.gov.cn/">tianditu</a> contributors'
+                    // });
+                    // var satelliteAno = L.tileLayer(tdtImgAno, { maxZoom: 18 });
+                    // var satellite = L.layerGroup([satelliteMap, satelliteAno]);
 
-                    var tdtTerrMap =
-                        "http://t0.tianditu.com/ter_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
-                        "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ter&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
-                    var tdtTerrAno =
-                        "http://t0.tianditu.com/eta_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
-                        "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=eta&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
-                    var terrainMap = L.tileLayer(tdtTerrMap, {
-                        maxZoom: 18,
-                        attribution:
-                            '&copy; <a href="http://map.tianditu.gov.cn/">tianditu</a> contributors'
-                    });
-                    var terrainAno = L.tileLayer(tdtTerrAno, { maxZoom: 18 });
-                    var terrain = L.layerGroup([terrainMap, terrainAno]);
+                    // var tdtTerrMap =
+                    //     "http://t0.tianditu.com/ter_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
+                    //     "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ter&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+                    // var tdtTerrAno =
+                    //     "http://t0.tianditu.com/eta_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
+                    //     "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=eta&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+                    // var terrainMap = L.tileLayer(tdtTerrMap, {
+                    //     maxZoom: 18,
+                    //     attribution:
+                    //         '&copy; <a href="http://map.tianditu.gov.cn/">tianditu</a> contributors'
+                    // });
+                    // var terrainAno = L.tileLayer(tdtTerrAno, { maxZoom: 18 });
+                    // var terrain = L.layerGroup([terrainMap, terrainAno]);
 
+                    // this.baseLayers = {
+                    //     "Mapbox Vector map": vector,
+                    //     "OSM Vector map": vectorOSM,
+                    //     "TDT Satellite map": satellite,
+                    //     "TDT Terrain map": terrain
+                    // };
+                    // var overlayLayers = {};
+                    // L.control.layers(this.baseLayers, overlayLayers).addTo(this.mapEl);
+                    // this.baseLayers["Mapbox Vector map"].addTo(this.mapEl);
+                    
+                    // // 底图均默认为0层级
+                    // this.baseLayers["Mapbox Vector map"].setZIndex(0);
+                    // this.baseLayers["OSM Vector map"].setZIndex(0);
+                    // this.baseLayers["TDT Satellite map"].setZIndex(0);
+                    // this.baseLayers["TDT Terrain map"].setZIndex(0);
+                    var normalMap = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "vec"
+                    });
+                    var normalLable = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "vec",
+                        isLabel: true
+                    })
+                    var imgMap = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "img"
+                    });
+                    var imgLable = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "img",
+                        isLabel: true
+                    })
+                    var terrainMap = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "ter"
+                    });
+                    var terrainLable = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "ter",
+                        isLabel: true
+                    })
+                    //图层与注记合并
+                    var normal = L.layerGroup([normalMap, normalLable]);
+                    var img = L.layerGroup([imgMap, imgLable]);
+                    var terrain = L.layerGroup([terrainMap, terrainLable]);
                     this.baseLayers = {
-                        "Mapbox Vector map": vector,
-                        "OSM Vector map": vectorOSM,
-                        "TDT Satellite map": satellite,
-                        "TDT Terrain map": terrain
+                        "矢量地图": normal,
+                        "影像地图": img,
+                        "地形地图": terrain
                     };
                     var overlayLayers = {};
                     L.control.layers(this.baseLayers, overlayLayers).addTo(this.mapEl);
-                    this.baseLayers["Mapbox Vector map"].addTo(this.mapEl);
+                    this.baseLayers["矢量地图"].addTo(this.mapEl);
                     
                     // 底图均默认为0层级
-                    this.baseLayers["Mapbox Vector map"].setZIndex(0);
-                    this.baseLayers["OSM Vector map"].setZIndex(0);
-                    this.baseLayers["TDT Satellite map"].setZIndex(0);
-                    this.baseLayers["TDT Terrain map"].setZIndex(0);
+                    this.baseLayers["矢量地图"].setZIndex(0);
+                    this.baseLayers["影像地图"].setZIndex(0);
+                    this.baseLayers["地形地图"].setZIndex(0);
 
                     // 比例尺
                     L.control
@@ -614,7 +868,12 @@
                         this.basinLayer.remove();
                     }catch{}
                     var level = this.levelSelect;
-                    // this.basinLayer = L.tileLayer('http://172.21.213.155:8085/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
+                    this.basinLayer = L.tileLayer.wms('http://116.63.252.134:8080/geoserver/Basin_shp/wms',{
+                        layers: 'Asia_level_0' + level,
+                        format: 'image/png',
+                        transparent: true,
+                        noWarp:true
+                    }).addTo(this.mapEl);
                     console.log('Show Standard Basin Layer in Level ' + level + '.');
                 },
                 changeCustomBasinsLevel(){
@@ -671,6 +930,153 @@
                 changeQueryBasinsLevel(){
                     console.log("Query Standard Basins in level " + this.levelSelectQuery + ".");
                 },
+                showUploadCSVModal(){
+                    this.toUploadCSV = null;
+                    this.csvName = "";
+                    this.uploadCSVModal = true;
+                },
+                cancelCSVSelect(){
+                    this.toUploadCSV = null;
+                    this.csvName = "";
+                },
+                gatherCSVFile(file){
+                    this.toUploadCSV = file;
+                    this.csvName = file.name;
+                },
+                uploadCSV(){
+                    if(this.toUploadCSV != null){
+                        this.$Message.success('Please wait for Data!');
+                        this.batchStatus="basinRunning";
+
+                        var formData = new FormData();
+                        formData.append('pointsCSV', this.toUploadCSV)
+                        axios({
+                            url: "/basins/queryMultiScope/" + this.csvQueryLevel,
+                            method: "post",
+                            data: formData
+                        })
+                        .then(res=>{
+                            console.log(res.data)
+                            this.batchStatus = "basinDownload";
+                            this.basinRangesUrl=res.data;
+                        })
+                        .catch(err=>{
+                            confirm('Run Custom Data Error!');
+                            this.batchStatus = "basinDownload";
+                            this.basinRangesUrl="";
+                        });
+                    }
+                    else{
+                        confirm("No File has be Added.");
+                    }
+                },
+                downloadMultiBasins(){
+                    confirm('Download Custom Data. Url: ' + this.basinRangesUrl);
+                    window.open(this.basinRangesUrl);
+                },
+                downloadRangeGeoJSON(){
+                    var geojsonStr = this.toDownloadGeoJSONStr;
+                    var geojsonBlob = new Blob([JSON.stringify(geojsonStr, null, 2)], {type: "application/json"})
+                    var reader = new FileReader();
+                    var filename = "basin.geojson";
+                    reader.readAsDataURL(geojsonBlob);
+                    reader.onload = function (e) {
+                        var a = document.createElement("a");
+                        a.download = filename;
+                        a.href = e.target.result;
+                        $("body").append(a);
+                        a.click();
+                        $(a).remove();
+                    };
+                },
+                showRunLisfloodModal(){
+                    this.modelStatus = "modelSetting";
+                    this.paramData = {
+                        rainParam: "",
+                        startParamD: "",
+                        startParamT: "",
+                        endParamD: "",
+                        endParamT: ""
+                    }
+                    this.lisfloodModal = true;
+                },
+                dateFormat(thisDate, fmt) {
+                    var o = {
+                    "M+": thisDate.getMonth() + 1, //月份
+                    "d+": thisDate.getDate(), //日
+                    "H+": thisDate.getHours(), //小时
+                    "m+": thisDate.getMinutes(), //分
+                    "s+": thisDate.getSeconds(), //秒
+                    "q+": Math.floor((thisDate.getMonth() + 3) / 3), //季度
+                    "S": thisDate.getMilliseconds() //毫秒
+                    };
+                    if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (thisDate.getFullYear() + "").substr(4 - RegExp.$1.length));
+                    for (var k in o)
+                    if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+                    return fmt;
+                },
+                showSimulationURL(wmsUrl, startTime, endTime){
+
+                    var newAvailableTimes = L.TimeDimension.Util.explodeTimeRange(new Date(startTime), new Date(endTime), 'PT30M');
+                    this.mapEl.timeDimension.setAvailableTimes(newAvailableTimes, 'replace');
+
+                    var wmsLayer = L.tileLayer.wms(wmsUrl, {
+                        layers: 'Band1',
+                        format: 'image/png',
+                        transparent: true,
+                        noWarp: true
+                    });
+                    var tdWmsLayer = L.timeDimension.layer.wms(wmsLayer);
+                    tdWmsLayer.addTo(this.mapEl);
+                },
+                runLFModel(name){
+                    this.$refs[name].validate((valid) => {
+                        if (valid) {
+                            this.$Message.success('Please wait for computation!');
+                            this.modelStatus="modelRunning";
+                            var startD = this.dateFormat(this.paramData.startParamD, "yyyy-MM-dd")
+                            var startDT = startD + '-' + this.paramData.startParamT;
+                            var endD = this.dateFormat(this.paramData.endParamD, "yyyy-MM-dd")
+                            var endDT = startD + '-' + this.paramData.endParamT;
+
+                            var formData = new FormData();
+                            formData.append('geojsonStr', JSON.stringify(this.toDownloadGeoJSONStr))
+                            formData.append('param1', this.paramData.rainParam)
+                            formData.append('param2', startDT)
+                            formData.append('param3', endDT)
+                            axios({
+                                url: "/runLISFloodModel",
+                                method: "post",
+                                data: formData
+                            })
+                            .then(res=>{
+                                console.log(res.data)
+                                var lisfloodResultURL = res.data;                    
+                                var startTime = this.dateFormat(this.paramData.startParamD, "yyyy-MM-dd") + "T" + this.paramData.startParamT + "Z";
+                                var endTime = this.dateFormat(this.paramData.endParamD, "yyyy-MM-dd") + "T" + this.paramData.endParamT + "Z";
+                                this.showSimulationURL(lisfloodResultURL, startTime, endTime);
+                                this.$Message.success('Show Result on Map!');
+                                this.modelStatus = "over";
+                                this.lisfloodModal = false;
+                            })
+                            .catch(err=>{
+                                confirm('Run Custom Data Error!');
+                                this.modelStatus = "over";
+                                this.lisfloodModal = false;
+                            });
+                            
+                            // window.setTimeout(()=>{
+                            //     confirm('Show results.');
+                            //     var lisfloodResultURL = "http://116.63.252.134:8080/geoserver/nc_test/wms";
+                            //     this.showSimulationURL(lisfloodResultURL, "2019-01-09T00:00:00Z", "2019-01-09T08:00:00Z");
+                            //     this.modelStatus = "over";
+                            //     this.lisfloodModal = false;
+                            // }, 3000);
+
+                        } else {
+                            confirm('Value Can not be Empty.');
+                    }});
+                },
                 showUploadGeoJSONModal(){
                     this.toUploadGeoJSON = null;
                     this.geoJSONName = "";
@@ -686,6 +1092,7 @@
                 },
                 uploadGeoJSON(){
                     if(this.toUploadGeoJSON != null){
+                        this.showDownloadGeoJSONBtn = false;
                         this.drawingLayerGroup.clearLayers();
                         var reader = new FileReader();
                         reader.readAsText(this.toUploadGeoJSON);
@@ -811,16 +1218,38 @@
                             this.$Message.success('Please wait for Data!');
                             this.customStatus="customRunning";
                             console.log(this.customData)
-                            window.setTimeout(()=>{
+
+                            var formData = new FormData();
+                            formData.append('fileDEM', this.customDEMFile)
+                            formData.append('fileLake', this.customLakeZip)
+                            formData.append('threshold', this.customDataSetting.riverThreshold)
+                            axios({
+                                url: "/runCustomData",
+                                method: "post",
+                                data: formData
+                            })
+                            .then(res=>{
+                                console.log(res.data)
                                 this.customStatus = "custom4Download";
-                                this.customDataUrl="XXX";
-                            }, 3000);
+                                this.customDataUrl=res.data;
+                            })
+                            .catch(err=>{
+                                confirm('Run Custom Data Error!');
+                                this.customStatus = "custom4Download";
+                                this.customDataUrl="";
+                            });
+                            
+                            // window.setTimeout(()=>{
+                            //     this.customStatus = "custom4Download";
+                            //     this.customDataUrl="XXX";
+                            // }, 3000);
                         } else {
                             confirm('Value Can not be Empty.');
                     }});
                 },
                 downloadCustomData(){
                     confirm('Download Custom Data. Url: ' + this.customDataUrl);
+                    window.open(this.customDataUrl);
                 },
                 addGeoJSONToMap(GeoJSONStr, color){
                     this.drawingLayerGroup.clearLayers();
@@ -844,10 +1273,12 @@
                 listenDraw(){
                     var _this = this;
                     this.mapEl.on('pm:create', e=>{
+                        _this.showDownloadGeoJSONBtn = false;
                         _this.drawingLayerGroup.clearLayers();
                         _this.drawingLayerGroup.addLayer(e.layer);
                     });
                     this.mapEl.on('pm:remove', e=>{
+                        _this.showDownloadGeoJSONBtn = false;
                         _this.drawingLayerGroup.clearLayers();
                     });
                     this.mapEl.on('click', e=>{
@@ -859,7 +1290,7 @@
                             switch(_this.queryType){
                                 case "standard":{
                                     //各级流域范围接口待补充
-                                    baseUrl = "/basins/querySubLevel" + this.levelSelectQuery;
+                                    baseUrl = "/basins/querySubLevel/" + this.levelSelectQuery;
                                     break;
                                 }
                                 case "upstream":{
@@ -869,26 +1300,34 @@
                                 }
                                 case "whole":{
                                     //临时写法
-                                    baseUrl = "http://localhost:8083/basins/queryScope"
+                                    baseUrl = "/basins/queryScope"
                                 }
                             }
+                            this.$Spin.show();
                             axios
                             .get(baseUrl + "?lon=" + lon +"&lat=" + lat)
                             .then(res=>{
-                                if(res.data !={} && res.data !=0){
-                                    var geoFeatrue = res.data;
-                                    var tempGeoJSON = {
-                                        "type": "FeatureCollection",
-                                        "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
-                                        "features": [geoFeatrue]
-                                    }
+                                if(res.data!=0){
+                                    var tempGeoJSON = res.data;
+                                    _this.showDownloadGeoJSONBtn = true;
+                                    _this.toDownloadGeoJSONStr = tempGeoJSON;
                                     _this.addGeoJSONToMap(JSON.stringify(tempGeoJSON), "red");
+                                    _this.$Spin.hide();
                                 }
                                 else{
-                                    confirm('No Basin Info Here.');
+                                     _this.$Message.error('No Basin Info Here');
+                                    _this.$Spin.hide();
                                 };
                             })
-                            .catch(err=>{});
+                            .catch(err=>{
+                                confirm('Something Wrong!');
+                                _this.$Spin.hide();
+                            });
+
+                            // this.showDownloadGeoJSONBtn = true;
+                            // this.toDownloadGeoJSONStr = basin_scale;
+                            // this.addGeoJSONToMap(JSON.stringify(basin_scale), "red");
+                            
                         }
                     });
                 },
