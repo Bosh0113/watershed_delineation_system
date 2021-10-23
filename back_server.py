@@ -53,7 +53,7 @@ def querySubLevel(lv):
 
 # CSV点集批量查询各流域范围
 @app.route('/basins/queryMultiScope/<lv>', methods=['POST'])
-def queryMultiScope():
+def queryMultiScope(lv):
     mycol = mydb["Basin_lv" + lv]
     f_csv = request.files['pointsCSV']
     

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>小流域山洪灾害在线模拟系统</title>
+    <title>Watershed Delineation System</title>
     <script src="/static/js/jquery.min.js"></script>
     <script src="/static/js/vue.min.js"></script>
     <link rel="stylesheet" type="text/css" href="/static/css/iview.css"/>
@@ -22,18 +22,6 @@
     <style>
         body{
             margin: 0px
-        }
-        .systemTitle{
-            position: fixed;
-            top: 10px;
-            left: 50px;
-            z-index: 9998;
-            background-color: aliceblue;
-            font-weight: bold;
-            font-style: normal;
-            padding: 10px 16px;
-            font-size: 48px;
-            letter-spacing: 3px;
         }
         .map{
             height: calc(100vh);
@@ -153,6 +141,9 @@
         .customOperationBtn{
             width:350px;
         }
+        .resetMultiBasins{
+            margin-left: 15px;   
+        }
         .removeCustomSelect{
             margin-left: 5px;
         }
@@ -167,16 +158,34 @@
             margin-top: 5px;
             width: 264px;
         }
+        .txtCenter{
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
     <div id="vueApp">
-        <div class="systemTitle">小流域山洪灾害在线模拟系统</div>
         <div class="map" id="leafletMap"></div>
         <div id="controllerDiv">
             <vue-scroll :ops="scrollOps" id="controllerScroll">
-                <!-- <Card :bordered="false" class='controllerItemDiv'>
+                <Card :bordered="false" class='controllerItemDiv'>
+                    <strong slot="title">Data Applications</strong>
+                    <p>Simulate Flood Status of Selected Region:</p>                    
+                    <div>
+                        <i-button class="modelBtn" :disabled="!showDownloadGeoJSONBtn" size="small" type="warning" ghost @click="showRunLisfloodModal">
+                            <p>Simulate Regional Flood Status</p>
+                        </i-button>
+                        <div class="txtCenter">
+                            <small>(usable after being given a region)</small>
+                        </div>
+                    </div>
+                    <Divider size="small" class="divider"></Divider>
+                    <div class="txtCenter">
+                        <p>Under Developing...</p>
+                    </div>
+                </Card>
+                <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Custom Data Generation</strong>
                     <p>Reset the Parameters of Result Data:</p>
                     <div class="customDiv">
@@ -194,16 +203,16 @@
                             <p>Upload & Setting & Download</p>
                         </i-button>
                     </div>
-                </Card> -->
+                </Card>
                 <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Data Service Tools</strong>
-                    <!-- <div class="batchQueryDiv">
+                    <div class="batchQueryDiv">
                         <span>Batch Query Basin Scopes:</span>
                         <i-button size="small" type="primary" ghost class="uploadCSV" @click="showUploadCSVModal">
                             <Icon type="ios-cloud-upload" size="15"></Icon>
                             <Icon type="ios-cloud-download" size="15"></Icon>
                         </i-button>
-                    </div> -->
+                    </div>
                     <span>Query Basin Scope by Click:</span>
                     <i-switch class="clickSwitch" size="large" @on-change="changeQueryBasinBtn" v-model="querySwitch">
                         <Icon slot="open" type="md-pin" size="20"></Icon>
@@ -222,12 +231,12 @@
                             @on-change="changeQueryBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
                             </i-select> -->
-                            <!-- <Radio label="upstream" class="basinLabel" :disabled = "!querySwitch">
+                            <Radio label="upstream" class="basinLabel" :disabled = "!querySwitch">
                                 <span>Whole Upstream of Lakes</span>
                             </Radio>
                             <Radio label="whole" class="basinLabel" :disabled = "!querySwitch">
                                 <span>Whole Basins</span>
-                            </Radio> -->
+                            </Radio>
                         </Radio-group>
                     </div>
                     <div>
@@ -235,12 +244,7 @@
                             <p>Download Basin Boundary to GeoJSON</p>
                         </i-button>
                     </div>
-                    <div>
-                        <i-button class="modelBtn" :disabled="!showDownloadGeoJSONBtn" size="small" type="primary" ghost @click="showRunLisfloodModal">
-                            <p>Simulate Regional Flood Status</p>
-                        </i-button>
-                    </div>
-                    <!-- <Divider size="small" class="divider"></Divider>
+                    <Divider size="small" class="divider"></Divider>
                     <span>Download Data by Geometry:</span>
                     <div class="basinTypeDiv">
                         <div>
@@ -257,37 +261,37 @@
                                 <Icon type="md-download" size="20"></Icon>
                             </i-button>
                         </div>
-                    </div> -->
+                    </div>
                 </Card>
                 <Card :bordered="false" class='controllerItemDiv'>
                     <strong slot="title">Data Layers Display</strong>
-                    <!-- <Checkbox v-model="riverCkb" @on-change="showRiverLayer">Rivers Layer</Checkbox>
-                    <Divider size="small" class="divider"></Divider> -->
+                    <Checkbox v-model="riverCkb" @on-change="showRiverLayer">Rivers Layer</Checkbox>
+                    <Divider size="small" class="divider"></Divider>
                     <Checkbox v-model="basinCkb" @on-change="showBasinsLayer">Basins Layer</Checkbox>
+                    <i-select class="basinSelecter" v-model="levelSelect" size="small" 
+                    :disabled="!basinCkb"
+                    @on-change="changeStandardBasinsLevel">
+                        <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
+                    </i-select>
                     <div class="basinTypeDiv">
                         <Radio-group v-model="basinType" @on-change="changeBainsType">
                             <Radio label="standard" class="basinLabel" :disabled = "!basinCkb">
                                 <span>Standard Basins</span>
                             </Radio>
-                            <i-select class="basinSelecter" v-model="levelSelect" size="small" 
-                            :disabled="!(basinCkb&&basinType=='standard')"
-                            @on-change="changeStandardBasinsLevel">
-                                <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
-                            </i-select>
-                            <!-- <Radio label="custom" class="basinLabel" :disabled = "!basinCkb">
+                            <Radio label="custom" class="basinLabel" :disabled = "!basinCkb">
                                 <span>Basins & Lakes</span>
                             </Radio>
-                            <i-select class="basinSelecter" v-model="levelSelectCustom" size="small" 
+                            <!-- <i-select class="basinSelecter" v-model="levelSelectCustom" size="small" 
                             :disabled="!(basinCkb&&basinType=='custom')"
                             @on-change="changeCustomBasinsLevel">
                                 <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
                             </i-select> -->
                         </Radio-group>
                     </div>
-                    <!-- <Divider size="small" class="divider"></Divider>
+                    <Divider size="small" class="divider"></Divider>
                     <Checkbox v-model="wholeUpstreamCkb" @on-change="showWholeUpstreamLayer">Whole Upstream of Lake Layer</Checkbox>
                     <Divider size="small" class="divider"></Divider>
-                    <Checkbox v-model="wholeBasinCkb" @on-change="showWholeBasinLayer">Whole Basins Layer</Checkbox> -->
+                    <Checkbox v-model="wholeBasinCkb" @on-change="showWholeBasinLayer">Whole Basins Layer</Checkbox>
                 </Card>
             </vue-scroll>
         </div>
@@ -324,6 +328,9 @@
             <div v-else-if="batchStatus=='basinDownload' && basinRangesUrl!=''" class="downloadBasinsBtnDiv">
                 <i-button size="small" class="customOperationBtn" type="success" ghost @click="downloadMultiBasins()">
                     <p>Download</p>
+                </i-button>
+                <i-button size="small" class="resetMultiBasins" shape="circle" type="primary" ghost @click="setDownloadMultiBasins()">
+                    <p>Reset</p>
                 </i-button>
             </div>
             <div slot="footer" v-if="batchStatus=='csvUpload'">
@@ -384,10 +391,10 @@
                 <i-button size="small" @click="lisfloodModal=false">Close</i-button>
             </div>
         </Modal>
-        <!-- <Modal v-model="uploadGeoJSONModal" title="Upload GeoJSON" width="600" draggable>
+        <Modal v-model="uploadGeoJSONModal" title="Upload GeoJSON" width="600" draggable>
             <div class="showGeoJSONInfoDiv">
                 <span>Selected File:</span>
-                <i-input v-model="geoJSONName" readonly class="geoJSONInfo" size="small"></i-input>
+                <i-input v-model="geoJSONName" readonly class="geoJSONInfo" size="small" :border="false" placeholder="Please select geojson file..."></i-input>
                 <i-button v-if="geoJSONName!=''" size="small" 
                 class="fileBtnHoverRed" id="removeGeoJSONSelect"
                 @click="cancelGeoJSONSelect">
@@ -406,8 +413,8 @@
                 <i-button @click="uploadGeoJSONModal=false">Cancel</i-button>
                 <i-button type="success" @click="uploadGeoJSON()">Upload</i-button>
             </div>
-        </Modal> -->
-        <!-- <Modal v-model="downloadDataModal" title="Select Data to Download" width="1000" draggable>
+        </Modal>
+        <Modal v-model="downloadDataModal" title="Select Data to Download" width="1000" draggable>
             <h4>Basic Data:</h4>
             <div class="selectDataDiv">
                 <span>Hydrologically Adjusted Elevations</span>
@@ -449,10 +456,11 @@
             </div>
             <h4>Product Data:</h4>
             <div class="selectDataDiv">
-                <span>Standard Basins</span>
+                <!-- <span>Standard Basins</span>
                 <i-select class="basinSelecter" v-model="levelSelectDownload" size="small" >
                     <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
-                </i-select>
+                </i-select> -->
+                <span>Standard Basins: <span>level {{levelSelect}}</span></span>
                 <i-button size="small" type="success" ghost class="downloadBtn" @click="downloadBasins" v-if="!loadingBasin">
                     <Icon type="md-download" size="20"></Icon>
                 </i-button>
@@ -555,7 +563,7 @@
             <div slot="footer">
                 <i-button size="small" @click="customDataModal=false">Close</i-button>
             </div>
-        </Modal> -->
+        </Modal>
     </div>
     
     <!-- <script src="/static/data/demo.js"></script> -->
@@ -583,7 +591,7 @@
                     basinCkb:true,
                     basinType: 'standard',
                     levelSelect: 7,
-                    levelSelectCustom: 5,
+                    // levelSelectCustom: 5,
                     levelLayerList:[],
                     basinLayer: null,
                     wholeUpstreamLayer:null,
@@ -601,7 +609,7 @@
                     toUploadGeoJSON: null,
                     geoJSONName:"",
                     downloadDataModal:false,
-                    levelSelectDownload: 1,
+                    // levelSelectDownload: 1,
                     loadingDEM:false,
                     loadingDir:false,
                     loadingAcc:false,
@@ -833,7 +841,7 @@
                         dragMode: false,
                         removalMode: true // adds a button to remove layers
                     };
-                    // this.mapEl.pm.addControls(options);
+                    this.mapEl.pm.addControls(options);
                 },
                 showRiverLayer(show){
                     if(show){
@@ -887,7 +895,8 @@
                     try{
                         this.basinLayer.remove();
                     }catch{}
-                    var level = this.levelSelectCustom;
+                    // var level = this.levelSelectCustom;
+                    var level = this.levelSelect;
                     // this.basinLayer = L.tileLayer('http://172.21.213.155:8085/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
                     console.log('Show Basin Layer with Lakes in Level ' + level + '.');
                 },
@@ -981,6 +990,9 @@
                 downloadMultiBasins(){
                     confirm('Download Custom Data. Url: ' + this.basinRangesUrl);
                     window.open(this.basinRangesUrl);
+                },
+                setDownloadMultiBasins(){
+                    this.batchStatus='csvUpload'
                 },
                 downloadRangeGeoJSON(){
                     var geojsonStr = this.toDownloadGeoJSONStr;
@@ -1151,7 +1163,8 @@
                     }, 3000);
                 },
                 downloadBasins(){
-                    var level = this.levelSelectDownload;
+                    // var level = this.levelSelectDownload;
+                    var level = this.levelSelect;
                     this.loadingBasin = true;
                     window.setTimeout(()=>{
                         this.loadingBasin = false;
