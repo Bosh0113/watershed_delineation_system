@@ -6,7 +6,7 @@ import time
 import shutil
 import csv
 
-# import modelDataWork as mdw
+import modelDataWork as mdw
 
 
 app = Flask(__name__)
@@ -143,11 +143,11 @@ def runLISFloodModel():
 
     #生成geojson文件
     geojson_path = comp_folder + '/basin.geojson'
-    with open(comp_folder, 'w') as w:
+    with open(geojson_path, 'w') as w:
         w.write(geojsonStr)
 
     # 调用模型的代码
-    # result_server = mdw.lisFlood_Run(comp_folder, param1, param2, param3)
+    result_server = mdw.lisFlood_Run(comp_folder, param1, param2, param3)
 
     shutil.rmtree(comp_folder)
 

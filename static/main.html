@@ -11,26 +11,29 @@
     <link rel="stylesheet" type="text/css" href="/static/css/leaflet.pm.css"/>
     <link rel="stylesheet" type="text/css" href="/static/css/vuescroll.css"/>
     <link rel="stylesheet" type="text/css" href="/static/css/leaflet.timedimension.control.min.css"/>
+    <link rel="stylesheet" href="https://iclient.supermap.io/dist/leaflet/iclient-leaflet.min.css" />
     <script src="/static/js/leaflet.js"></script>
     <script src="/static/js/leaflet.pm.min.js"></script>
     <script src="/static/js/axios.min.js"></script>
     <script src="/static/js/vuescroll.js"></script>
     <script src="/static/js/iso8601.min.js"></script>
     <script src="/static/js/leaflet.timedimension.min.js"></script>
+    <script type="text/javascript" src="https://iclient.supermap.io/dist/leaflet/iclient-leaflet.js"></script>
     <style>
         body{
             margin: 0px
         }
         .systemTitle{
             position: fixed;
-            top: 3px;
+            top: 10px;
             left: 50px;
-            z-index: 9999;
+            z-index: 9998;
             background-color: aliceblue;
             font-weight: bold;
             font-style: normal;
-            padding: 0px 10px;
-            font-size: x-large;
+            padding: 10px 16px;
+            font-size: 48px;
+            letter-spacing: 3px;
         }
         .map{
             height: calc(100vh);
@@ -47,9 +50,13 @@
             display: flex;
             flex-direction: column-reverse;
         }
+        .zZindex{
+            z-index:9999 !important;
+        }
         .controllerItemDiv{
             background-color:#f0f8ff85;
             margin-top: 10px;
+            margin-bottom: 10px;
         }
         .basinTypeDiv{
             padding: 0px 0px 0px 15px;
@@ -692,6 +699,7 @@
                     this.mapEl = L.map('leafletMap',{
                         zoom: 5,
                         center: [34, 110],
+                        crs: L.CRS.TianDiTu_WGS84,
                         timeDimension: true,
                         timeDimensionControl: true,
                     });
@@ -702,58 +710,108 @@
                 },
                 initLayers(){
                     // 图层控件
-                    var mapboxVectorMap = 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYm9zaDAxMTMiLCJhIjoiY2tsM3FicnprMTMyZTJvbzRpeXF4Y2ZoOSJ9.JFmrSXBF0bTcqyXXnWjLYQ';
-                    var vectorMap = L.tileLayer(mapboxVectorMap, { maxZoom: 18 });
-                    var vector = L.layerGroup([vectorMap]);
+                    // var mapboxVectorMap = 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYm9zaDAxMTMiLCJhIjoiY2tsM3FicnprMTMyZTJvbzRpeXF4Y2ZoOSJ9.JFmrSXBF0bTcqyXXnWjLYQ';
+                    // var vectorMap = L.tileLayer(mapboxVectorMap, { maxZoom: 18 });
+                    // var vector = L.layerGroup([vectorMap]);
 
                     
-                    var osmVectorMap = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-                    var osmVectorMap = L.tileLayer(osmVectorMap, { maxZoom: 18 });
-                    var vectorOSM = L.layerGroup([osmVectorMap]);
+                    // var osmVectorMap = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    // var osmVectorMap = L.tileLayer(osmVectorMap, { maxZoom: 18 });
+                    // var vectorOSM = L.layerGroup([osmVectorMap]);
                     
-                    var tdtImgMap =
-                        "http://t0.tianditu.gov.cn/img_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
-                        "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
-                    var tdtImgAno =
-                        "http://t0.tianditu.gov.cn/eia_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
-                        "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=eia&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
-                    var satelliteMap = L.tileLayer(tdtImgMap, {
-                        maxZoom: 18,
-                        attribution:
-                            '&copy; <a href="http://map.tianditu.gov.cn/">tianditu</a> contributors'
-                    });
-                    var satelliteAno = L.tileLayer(tdtImgAno, { maxZoom: 18 });
-                    var satellite = L.layerGroup([satelliteMap, satelliteAno]);
+                    // var tdtImgMap =
+                    //     "http://t0.tianditu.gov.cn/img_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
+                    //     "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=img&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+                    // var tdtImgAno =
+                    //     "http://t0.tianditu.gov.cn/eia_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
+                    //     "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=eia&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+                    // var satelliteMap = L.tileLayer(tdtImgMap, {
+                    //     maxZoom: 18,
+                    //     attribution:
+                    //         '&copy; <a href="http://map.tianditu.gov.cn/">tianditu</a> contributors'
+                    // });
+                    // var satelliteAno = L.tileLayer(tdtImgAno, { maxZoom: 18 });
+                    // var satellite = L.layerGroup([satelliteMap, satelliteAno]);
 
-                    var tdtTerrMap =
-                        "http://t0.tianditu.com/ter_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
-                        "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ter&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
-                    var tdtTerrAno =
-                        "http://t0.tianditu.com/eta_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
-                        "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=eta&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
-                    var terrainMap = L.tileLayer(tdtTerrMap, {
-                        maxZoom: 18,
-                        attribution:
-                            '&copy; <a href="http://map.tianditu.gov.cn/">tianditu</a> contributors'
-                    });
-                    var terrainAno = L.tileLayer(tdtTerrAno, { maxZoom: 18 });
-                    var terrain = L.layerGroup([terrainMap, terrainAno]);
+                    // var tdtTerrMap =
+                    //     "http://t0.tianditu.com/ter_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
+                    //     "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ter&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+                    // var tdtTerrAno =
+                    //     "http://t0.tianditu.com/eta_w/wmts?tk=d6b0b78f412853967d91042483385d2c" +
+                    //     "&SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=eta&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}";
+                    // var terrainMap = L.tileLayer(tdtTerrMap, {
+                    //     maxZoom: 18,
+                    //     attribution:
+                    //         '&copy; <a href="http://map.tianditu.gov.cn/">tianditu</a> contributors'
+                    // });
+                    // var terrainAno = L.tileLayer(tdtTerrAno, { maxZoom: 18 });
+                    // var terrain = L.layerGroup([terrainMap, terrainAno]);
 
+                    // this.baseLayers = {
+                    //     "Mapbox Vector map": vector,
+                    //     "OSM Vector map": vectorOSM,
+                    //     "TDT Satellite map": satellite,
+                    //     "TDT Terrain map": terrain
+                    // };
+                    // var overlayLayers = {};
+                    // L.control.layers(this.baseLayers, overlayLayers).addTo(this.mapEl);
+                    // this.baseLayers["Mapbox Vector map"].addTo(this.mapEl);
+                    
+                    // // 底图均默认为0层级
+                    // this.baseLayers["Mapbox Vector map"].setZIndex(0);
+                    // this.baseLayers["OSM Vector map"].setZIndex(0);
+                    // this.baseLayers["TDT Satellite map"].setZIndex(0);
+                    // this.baseLayers["TDT Terrain map"].setZIndex(0);
+                    var normalMap = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "vec"
+                    });
+                    var normalLable = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "vec",
+                        isLabel: true
+                    })
+                    var imgMap = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "img"
+                    });
+                    var imgLable = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "img",
+                        isLabel: true
+                    })
+                    var terrainMap = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "ter"
+                    });
+                    var terrainLable = L.supermap.tiandituTileLayer
+                    ({
+                        key:"56b0c218a6c4020cd38b5fc2be7c6202",
+                        layerType: "ter",
+                        isLabel: true
+                    })
+                    //图层与注记合并
+                    var normal = L.layerGroup([normalMap, normalLable]);
+                    var img = L.layerGroup([imgMap, imgLable]);
+                    var terrain = L.layerGroup([terrainMap, terrainLable]);
                     this.baseLayers = {
-                        "Mapbox Vector map": vector,
-                        "OSM Vector map": vectorOSM,
-                        "TDT Satellite map": satellite,
-                        "TDT Terrain map": terrain
+                        "矢量地图": normal,
+                        "影像地图": img,
+                        "地形地图": terrain
                     };
                     var overlayLayers = {};
                     L.control.layers(this.baseLayers, overlayLayers).addTo(this.mapEl);
-                    this.baseLayers["Mapbox Vector map"].addTo(this.mapEl);
+                    this.baseLayers["矢量地图"].addTo(this.mapEl);
                     
                     // 底图均默认为0层级
-                    this.baseLayers["Mapbox Vector map"].setZIndex(0);
-                    this.baseLayers["OSM Vector map"].setZIndex(0);
-                    this.baseLayers["TDT Satellite map"].setZIndex(0);
-                    this.baseLayers["TDT Terrain map"].setZIndex(0);
+                    this.baseLayers["矢量地图"].setZIndex(0);
+                    this.baseLayers["影像地图"].setZIndex(0);
+                    this.baseLayers["地形地图"].setZIndex(0);
 
                     // 比例尺
                     L.control
