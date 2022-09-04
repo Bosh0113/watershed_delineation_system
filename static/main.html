@@ -604,7 +604,7 @@
             },
             methods:{
                 initLevelLabel(){
-                    for(i=5;i<10;i++){
+                    for(i=5;i<13;i++){
                         item = {
                             value: i,
                             label: 'level ' + i
@@ -698,8 +698,14 @@
                 },
                 showRiverLayer(show){
                     if(show){
-                        // console.log('Show River Layer.');
-                        this.riverLayer = L.tileLayer('http://172.21.212.233:8085/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
+                        console.log('Show River Layer.');
+                        // this.riverLayer = L.tileLayer('http://172.21.212.233:8085/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
+                        this.riverLayer = L.tileLayer.wms('http://10.4.122.110:8070/geoserver/case_basin/wms',{
+                            layers: 'case_basin:stream_shp',
+                            format: 'image/png',
+                            transparent: true,
+                            noWarp:true
+                        }).addTo(this.mapEl);
                     }
                     else{
                         // console.log('Hide River Layer.');
@@ -736,8 +742,8 @@
                         this.basinLayer.remove();
                     }catch{}
                     var level = this.levelSelect;
-                    this.basinLayer = L.tileLayer.wms('http://116.63.252.134:8080/geoserver/Basin_shp/wms',{
-                        layers: 'Asia_level_0' + level,
+                    this.basinLayer = L.tileLayer.wms('http://10.4.122.110:8070/geoserver/case_basin/wms',{
+                        layers: 'case_basin:lv' + level,
                         format: 'image/png',
                         transparent: true,
                         noWarp:true
