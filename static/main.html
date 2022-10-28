@@ -267,14 +267,12 @@
                         <i-option v-for="item in levelLayerList" :value="item.value" :key="item.value">{{ item.label }}</i-option>
                     </i-select>
                     <div class="basinTypeDiv">
-                        <Radio-group v-model="basinType" @on-change="changeBainsType">
-                            <Radio label="standard" class="basinLabel" :disabled = "!basinCkb">
-                                <span>Standard Basins</span>
-                            </Radio>
-                            <Radio label="custom" class="basinLabel" :disabled = "!basinCkb">
-                                <span>Basins & Lakes</span>
-                            </Radio>
-                        </Radio-group>
+                        <Checkbox v-model="standardBasinCkb" @on-change="changeStandardBasinsLevel" :disabled = "!basinCkb">
+                            <span>Standard Basins</span>
+                        </Checkbox>
+                        <Checkbox v-model="customBasinCkb" @on-change="changeCustomBasinsLevel" :disabled = "!basinCkb">
+                            <span>Basins & Lakes</span>
+                        </Checkbox>
                     </div>
                     <Divider size="small" class="divider"></Divider>
                     <Checkbox v-model="wholeUpstreamCkb" @on-change="showWholeUpstreamLayer">Whole Upstream of Lake Layer</Checkbox>
@@ -524,11 +522,12 @@
                     riverLayer: null,
                     riverCkb: false,
                     basinCkb:true,
-                    basinType: 'standard',
+                    standardBasinCkb: true,
+                    customBasinCkb: false,
                     levelSelect: 7,
-                    // levelSelectCustom: 5,
                     levelLayerList:[],
-                    basinLayer: null,
+                    s_basinLayer: null,
+                    c_basinLayer: null,
                     wholeUpstreamLayer:null,
                     lakesLayer:null,
                     wholeBasinLayer: null,
@@ -721,43 +720,43 @@
                     else{
                         console.log('Hide Basins Layer.');
                         try{
-                            this.basinLayer.remove();
+                            this.s_basinLayer.remove();
+                            this.c_basinLayer.remove();
                         }catch{}
                     }
                 },
                 changeBainsType(){
-                    switch(this.basinType){
-                        case 'standard':{
-                            this.changeStandardBasinsLevel();
-                            break;
-                        }
-                        case 'custom':{
-                            this.changeCustomBasinsLevel();
-                            break;
-                        }
-                    }
+                    this.changeStandardBasinsLevel();
+                    this.changeCustomBasinsLevel();
                 },
                 changeStandardBasinsLevel(){
                     try{
-                        this.basinLayer.remove();
+                        this.s_basinLayer.remove();
                     }catch{}
-                    var level = this.levelSelect;
-                    this.basinLayer = L.tileLayer.wms('http://10.4.122.110:8070/geoserver/case_basin/wms',{
-                        layers: 'case_basin:lv' + level,
-                        format: 'image/png',
-                        transparent: true,
-                        noWarp:true
-                    }).addTo(this.mapEl);
-                    console.log('Show Standard Basin Layer in Level ' + level + '.');
+                    if(this.standardBasinCkb){
+                        var level = this.levelSelect;
+                        this.s_basinLayer = L.tileLayer.wms('http://10.4.122.110:8070/geoserver/case_basin/wms',{
+                            layers: 'case_basin:lv' + level,
+                            format: 'image/png',
+                            transparent: true,
+                            noWarp:true
+                        }).addTo(this.mapEl);
+                        console.log('Show Standard Basin Layer in Level ' + level + '.');
+                    }
                 },
                 changeCustomBasinsLevel(){
                     try{
-                        this.basinLayer.remove();
+                        this.c_basinLayer.remove();
                     }catch{}
-                    // var level = this.levelSelectCustom;
-                    var level = this.levelSelect;
-                    // this.basinLayer = L.tileLayer('http://172.21.213.155:8085/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
-                    console.log('Show Basin Layer with Lakes in Level ' + level + '.');
+                    if(this.customBasinCkb){
+                        var level = this.levelSelect;
+                        var port = '80' + level.toString()
+                        if(level<10){
+                            port = '800' + level.toString()
+                        }
+                        this.c_basinLayer = L.tileLayer('http://10.4.122.110:' + port + '/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
+                        console.log('Show Basin Layer with Lakes in Level ' + level + '.');
+                    }
                 },
                 showWholeUpstreamLayer(show){
                     if(show){
