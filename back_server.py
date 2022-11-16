@@ -6,12 +6,11 @@ import time
 import shutil
 import csv
 
-import modelDataWork as mdw
+# import modelDataWork as mdw
 
 app = Flask(__name__)
-# myclient = pymongo.MongoClient('mongodb://localhost:27017/')
-myclient = pymongo.MongoClient('mongodb://116.63.252.134:7070/')
-mydb = myclient["BasinsDataBase"]
+myclient = pymongo.MongoClient('mongodb://10.4.122.110:27017/')
+mydb = myclient["BasinsDataBase_case"]
 app.config['UPLOAD_FOLDER'] = 'static/compute'
 app.config['RESULT_FOLDER'] = 'static/results'
 
@@ -131,27 +130,28 @@ def queryMultiScope(lv):
 
 @app.route('/runLISFloodModel', methods=['POST'])
 def runLISFloodModel():
-    geojsonStr = request.form.get('geojsonStr')
-    param1 = request.form.get('param1')
-    param2 = request.form.get('param2')
-    param3 = request.form.get('param3')
+    # geojsonStr = request.form.get('geojsonStr')
+    # param1 = request.form.get('param1')
+    # param2 = request.form.get('param2')
+    # param3 = request.form.get('param3')
 
-    # 创建此次请求的工作空间
-    run_id = str(time.time())
-    comp_folder = os.path.join(os.path.abspath('.'), app.config['UPLOAD_FOLDER'], run_id)
-    os.makedirs(comp_folder)
+    # # 创建此次请求的工作空间
+    # run_id = str(time.time())
+    # comp_folder = os.path.join(os.path.abspath('.'), app.config['UPLOAD_FOLDER'], run_id)
+    # os.makedirs(comp_folder)
 
-    #生成geojson文件
-    geojson_path = comp_folder + '/basin.geojson'
-    with open(geojson_path, 'w') as w:
-        w.write(geojsonStr)
+    # #生成geojson文件
+    # geojson_path = comp_folder + '/basin.geojson'
+    # with open(geojson_path, 'w') as w:
+    #     w.write(geojsonStr)
 
-    # 调用模型的代码
-    result_server = mdw.lisFlood_Run(comp_folder, param1, param2, param3)
+    # # 调用模型的代码
+    # result_server = mdw.lisFlood_Run(comp_folder, param1, param2, param3)
 
-    shutil.rmtree(comp_folder)
+    # shutil.rmtree(comp_folder)
 
-    return result_server
+    # return result_server
+    return 0
 
 
 if __name__ == "__main__":
