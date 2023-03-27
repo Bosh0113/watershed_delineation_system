@@ -54,7 +54,7 @@
             z-index:9999 !important;
         }
         .controllerItemDiv{
-            background-color:#f0f8ff85;
+            background-color:#ffffffd5;
             margin-top: 10px;
             margin-bottom: 10px;
         }
@@ -699,7 +699,7 @@
                     if(show){
                         console.log('Show River Layer.');
                         // this.riverLayer = L.tileLayer('http://172.21.212.233:8085/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
-                        this.riverLayer = L.tileLayer.wms('http://10.4.122.110:8070/geoserver/case_basin/wms',{
+                        this.riverLayer = L.tileLayer.wms('http://10.4.102.93:8070/geoserver/case_basin/wms',{
                             layers: 'case_basin:stream_shp',
                             format: 'image/png',
                             transparent: true,
@@ -735,7 +735,7 @@
                     }catch{}
                     if(this.standardBasinCkb){
                         var level = this.levelSelect;
-                        this.s_basinLayer = L.tileLayer.wms('http://10.4.122.110:8070/geoserver/case_basin/wms',{
+                        this.s_basinLayer = L.tileLayer.wms('http://10.4.102.93:8070/geoserver/case_basin/wms',{
                             layers: 'case_basin:lv' + level,
                             format: 'image/png',
                             transparent: true,
@@ -754,7 +754,7 @@
                         if(level<10){
                             port = '800' + level.toString()
                         }
-                        this.c_basinLayer = L.tileLayer('http://10.4.122.110:' + port + '/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
+                        this.c_basinLayer = L.tileLayer('http://10.4.102.93:' + port + '/tile/{z}/{x}/{y}.png').addTo(this.mapEl);
                         console.log('Show Basin Layer with Lakes in Level ' + level + '.');
                     }
                 },
@@ -1132,7 +1132,7 @@
                                     var tempGeoJSON = res.data;
                                     _this.showDownloadGeoJSONBtn = true;
                                     _this.toDownloadGeoJSONStr = tempGeoJSON;
-                                    _this.addGeoJSONToMap(JSON.stringify(tempGeoJSON), "red");
+                                    _this.addGeoJSONToMap(JSON.stringify(tempGeoJSON), "black");
                                     _this.$Spin.hide();
                                 }
                                 else{

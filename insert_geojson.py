@@ -4,7 +4,7 @@ import pymongo
 
 geojson_folder = r'D:\Work_PhD\MISR_AHI_WS\221115\nested'
 
-myclient = pymongo.MongoClient('mongodb://10.4.122.110:27017/')
+myclient = pymongo.MongoClient('mongodb://10.4.102.93:27017/')
 mydb = myclient["BasinsDataBase_case"]
 
 for i in range(5, 13):

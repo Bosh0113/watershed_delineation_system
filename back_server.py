@@ -9,7 +9,7 @@ import csv
 # import modelDataWork as mdw
 
 app = Flask(__name__)
-myclient = pymongo.MongoClient('mongodb://10.4.122.110:27017/')
+myclient = pymongo.MongoClient('mongodb://10.4.102.93:27017/')
 mydb = myclient["BasinsDataBase_case"]
 app.config['UPLOAD_FOLDER'] = 'static/compute'
 app.config['RESULT_FOLDER'] = 'static/results'
@@ -155,4 +155,4 @@ def runLISFloodModel():
 
 
 if __name__ == "__main__":
-    app.run('0.0.0.0', 5000)
+    app.run('0.0.0.0', 5001)
