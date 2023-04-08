@@ -882,20 +882,6 @@
                     if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
                     return fmt;
                 },
-                showSimulationURL(wmsUrl, startTime, endTime){
-
-                    var newAvailableTimes = L.TimeDimension.Util.explodeTimeRange(new Date(startTime), new Date(endTime), 'PT30M');
-                    this.mapEl.timeDimension.setAvailableTimes(newAvailableTimes, 'replace');
-
-                    var wmsLayer = L.tileLayer.wms(wmsUrl, {
-                        layers: 'Band1',
-                        format: 'image/png',
-                        transparent: true,
-                        noWarp: true
-                    });
-                    var tdWmsLayer = L.timeDimension.layer.wms(wmsLayer);
-                    tdWmsLayer.addTo(this.mapEl);
-                },
                 showUploadGeoJSONModal(){
                     this.toUploadGeoJSON = null;
                     this.geoJSONName = "";
@@ -999,16 +985,39 @@
                             this.$Message.success('Please wait for Data!');
                             this.resetStatus="resetRunning";
                             console.log(this.resetData)
-                            window.setTimeout(()=>{
+
+                            var formData = new FormData();
+                            formData.append('riverThreshold', this.resetData.riverThreshold)
+                            formData.append('lakeThreshold', this.resetData.lakeThreshold)
+                            formData.append('extentGeojson', this.toDownloadGeoJSONStr)
+
+                            axios({
+                                url: "/runResetData",
+                                method: "post",
+                                data: formData
+                            })
+                            .then(res=>{
+                                console.log(res.data)
                                 this.resetStatus = "reset4Download";
-                                this.resultDataUrl="XXX";
-                            }, 3000);
+                                this.resultDataUrl=res.data;
+                            })
+                            .catch(err=>{
+                                confirm('Run Reset Data Error!');
+                                this.resetStatus = "reset4Download";
+                                this.resultDataUrl="";
+                            });
+
+                            // window.setTimeout(()=>{
+                            //     this.resetStatus = "reset4Download";
+                            //     this.resultDataUrl="XXX";
+                            // }, 3000);
                         } else {
                             confirm('Value Can not be Empty.');
                     }});
                 },
                 downloadResetData(){
                     confirm('Download Reset Data. Url: ' + this.resultDataUrl);
+                    window.open(this.resultDataUrl);
                 },
                 showCustomDataModal(){
                     this.customDataModal = true;

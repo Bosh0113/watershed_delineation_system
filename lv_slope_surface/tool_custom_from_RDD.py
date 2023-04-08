@@ -1,4 +1,5 @@
 # coding=utf-8
+import sys
 import os
 import time
 import slope_surface_extract as sse
@@ -180,8 +181,15 @@ if __name__ == '__main__':
     conf = gps.geopyspark_conf(master="local[*]", appName="master")
     pysc = SparkContext(conf=conf)
 
-    workspace = '/disk1/other_ws/basin_lake_ws/20230327'
-    extent_geojson = workspace + '/basin.geojson'
-    lakes_area_threshold = 10
-    river_threshold = 5
-    start_main(workspace, extent_geojson, lakes_area_threshold, river_threshold, river_threshold)
+    temp_ws_path = sys.argv[1]
+    ex_geojson_path = sys.argv[2]
+    river_th = int(sys.argv[3])
+    lake_th = int(sys.argv[4])
+
+    start_main(temp_ws_path, ex_geojson_path, lake_th, river_th, river_th)
+
+    # workspace = '/disk1/other_ws/basin_lake_ws/20230327'
+    # extent_geojson = workspace + '/basin.geojson'
+    # lakes_area_threshold = 10
+    # river_threshold = 5
+    # start_main(workspace, extent_geojson, lakes_area_threshold, river_threshold, river_threshold)

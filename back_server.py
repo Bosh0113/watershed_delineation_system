@@ -20,7 +20,7 @@ def mainpage():
     return app.send_static_file("main.html")
 
 
-# 示例代码可删除
+# 查询完整流域
 @app.route('/basins/queryScope', methods=['GET'])
 def queryScope():
     lon = float(request.args.get('lon'))
@@ -94,7 +94,34 @@ def queryMultiScope(lv):
     return result_zip
 
 
-# 示例代码可删除
+# 自定义参数提取结果
+@app.route('/runResetData', methods=['POST'])
+def runResetData():
+    riverThreshold = request.form.get('riverThreshold')
+    lakeThreshold = request.form.get('lakeThreshold')
+    extentGeojson_str = request.form.get('extentGeojson')
+
+    run_id = str(time.time())
+    comp_folder = os.path.join(os.path.abspath('.'), app.config['RESET_FOLDER'], run_id)
+    if not os.path.exists(comp_folder):
+        os.makedirs(comp_folder)
+    
+    extent_geojson_path = os.path.join(comp_folder, 'extent.geojson')
+    with open(extent_geojson_path, 'w') as w:
+        w.write(str(extentGeojson_str))
+
+    cmd = 'python ./lv_slope_surface/tool_custom_from_RDD.py ' + comp_folder + ' ' + extent_geojson_path + ' ' + riverThreshold + ' ' + lakeThreshold
+    d = os.system(cmd)
+    print("CMD status", d)
+
+    shutil.make_archive(comp_folder, 'zip', comp_folder)
+
+    result_zip = "/" + app.config['RESET_FOLDER'] + "/" + run_id + '.zip'
+
+    return result_zip
+
+
+# 自定义生成提取结果
 @app.route('/runCustomData', methods=['POST'])
 def runCustomData():
     f_dem = request.files['fileDEM']
@@ -103,7 +130,8 @@ def runCustomData():
 
     run_id = str(time.time())
     comp_folder = os.path.join(os.path.abspath('.'), app.config['UPLOAD_FOLDER'], run_id)
-    os.makedirs(comp_folder)
+    if not os.path.exists(comp_folder):
+        os.makedirs(comp_folder)
 
     f_dem_path = os.path.join(comp_folder,secure_filename(f_dem.filename))
     f_lake_path = os.path.join(comp_folder,secure_filename(f_lake.filename))
@@ -112,7 +140,8 @@ def runCustomData():
     f_lake.save(f_lake_path)
 
     resu_folder = os.path.join(os.path.abspath('.'), app.config['RESULT_FOLDER'], run_id)
-    os.makedirs(resu_folder)
+    if not os.path.exists(resu_folder):
+        os.makedirs(resu_folder)
 
     cmd = 'python custom_produce.py ' + f_dem_path + ' ' + f_lake_path + ' ' + threshold + ' ' + resu_folder
     d = os.system(cmd)
